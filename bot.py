@@ -25,7 +25,7 @@ intents.members = True
 client = discord.Client(intents=intents)
 # --------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
-# Custom functions for swiss bracketmaker
+# Functions for swiss bracketmaker
 # --------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
 
@@ -94,7 +94,7 @@ def create_matchup (player1name,player1id,player2name,player2id,rowNumber,rowOff
 
 # --------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
-# End of custom functions
+# End of functions
 # --------------------------------------------------------------------------------------------------     
 # -------------------------------------------------------------------------------------------------- 
 
@@ -117,13 +117,50 @@ async def on_message(message: discord.Message):
         if role.name in 'Tournament Staff':
             rolecheck = True
 
+    # --------------------------------------------------------------------------------------------------
+    # General use commands
+    # --------------------------------------------------------------------------------------------------
+
+    # ping
+    if message.content.startswith('s!ping'):
+        await message.reply('Pong.')
+
+    # Resources
+    if message.content.startswith('s!resources'):
+        await message.reply('You may find resources that may help introduce you to the draft format or run your own league on the following thread: https://www.smogon.com/forums/threads/draft-league-resources.3716128/')
+
+    # Template
+    if message.content.startswith('s!template'):
+        await message.reply('The sheet template is currently being updated to account for the DLC release and will be available later.')
+    
+    # Tiers
+    if message.content.startswith('s!tiers'):
+        await message.reply('The tier lists are currently being updated to account for the DLC release and will be available later.')
+    
+    # Circuit
+    if message.content.startswith('s!circuit'):
+        await message.reply('All information related to the current draft circuit may be found at this smogon thread: https://www.smogon.com/forums/threads/draft-league-tournament-schedule-and-announcements-2023.3713506/ and on this spreadsheet: https://docs.google.com/spreadsheets/d/1sBMOgbst-ZlAjy-bshpZrCs2Tv0GRcEQIl7VjhGSh44/ .')
+    
     # Help
-    # -----------------------------------------------------------------------------------------------------------------------------------------------------------   
     if message.content.startswith('s!help'):
+        embed = discord.Embed(title='DraftHelper Commands')
+        embed.add_field(name='s!resources',value='Link to the resources thread on the smogon forum.', inline=False)
+        embed.add_field(name='s!template',value='Link to the sheet template used by the tournaments.', inline=False)
+        embed.add_field(name='s!tiers',value='Link to the updated tier lists currently being used for our tournaments.', inline=False)
+        embed.add_field(name='s!circuit',value='Links to the circuit announcements thread on the smogon forum and to the sheet currently being used for the circuit.', inline=False)
+        await message.channel.send(embed=embed)
+
+    # --------------------------------------------------------------------------------------------------
+    # Admin commands
+    # --------------------------------------------------------------------------------------------------
+
+    # Admin commands Help
+    # -----------------------------------------------------------------------------------------------------------------------------------------------------------   
+    if message.content.startswith('s!helpAdmin'):
         if rolecheck == False:
             await message.channel.send('You do not have the required permissions to run this command!')
             return
-        embed = discord.Embed(title='DraftHelper Commands')
+        embed = discord.Embed(title='DraftHelper Admin Commands')
         embed.add_field(name='s!assignDraftPools [ID] (Competitor role)',value='Assign pools on column A to users in column B in the "Draft Pools" tab on the given google spreadsheet. Competitor role is optional and will be added alongside draft pool role.', inline=False)
         embed.add_field(name='s!removeDraftPools',value='Remove all Draft Pool roles from users in this server.', inline=False)
         embed.add_field(name='s!assignBattlePools [ID]',value='Assign pools on column A to users in column B in the "Battle Pools" tab on the given google spreadsheet. Pool roles are configured to be groups of 8 pools (i.e. Battle Pools 1-8).', inline=False)
@@ -132,6 +169,8 @@ async def on_message(message: discord.Message):
         embed.add_field(name='s!resetDraftChannels',value='Looks for channels that are named X-draft-done and removes the "-done".', inline=False)
         embed.add_field(name='s!toggleMessages [on/off]',value='Toggles whether or not the bot will send confirmation messages for each role that is added / removed (default off).', inline=False)
         embed.add_field(name='s!verifyUsers [ID]',value='Checks if any user in the list in the "Not Verified" tab in the doc is verified in the server or not.', inline=False)
+        embed.add_field(name='s!removeCompetitorRoles',value='Removes the competitor roles for the current circuit. NOTE: This command is currently hardcoded to only work with a specific role, and is in the process of being updated.', inline=False)
+        embed.add_field(name='s!updateSwissBracket [ID]',value='Runs the swiss bracketmaker tool. Requires a sheet properly configured to run with it. Contact @vmnunes for more information.', inline=False)
         await message.channel.send(embed=embed)
 
     # Assign Draft Pools
@@ -369,17 +408,9 @@ async def on_message(message: discord.Message):
                         await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
         await message.channel.send('**{}: All competitor roles have been removed.**'.format(f'{message.author.mention}'))
 
-    # if message.content.startswith("s!testMessageLimit"):
-    #     if rolecheck == False:
-    #         await message.channel.send('You do not have the required permissions to run this command!')
-    #     message_args = message.content.split(' ')[1:]
-    #     dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges=['Data!A:AL','Match History!A:G']).execute()
-    #     message2 = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][7]['values'][1]['formattedValue']
-    #     await message.channel.send("{}".format(message2))
-
 # -------------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------
-# --------------------------------------------- SWISS BRACKETMAKER STUFF --------------------------------------------------------
+# ------------------------------------------------ SWISS BRACKETMAKER -----------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------
 
@@ -397,6 +428,7 @@ async def on_message(message: discord.Message):
             dataId = dataSpreadsheet['sheets'][0]['properties']['sheetId'] # get ID of data spreadsheet in the google doc
             matchupId = dataSpreadsheet['sheets'][1]['properties']['sheetId'] # get ID of matchup spreadsheet in the google doc
             lossesCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][7]['values'][1]['effectiveValue']['numberValue'] # get number of losses for which players are eliminated
+            winsCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][10]['values'][1]['effectiveValue']['numberValue'] # get number of wins for which players are no longer put into matchmaking
 
             # update round number
             roundNumber = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][1]['values'][1]['effectiveValue']['numberValue'] # get round number
@@ -448,7 +480,7 @@ async def on_message(message: discord.Message):
                 playersToRemove = []
                 for i in range(0,len(playerList)):
                     numcheck = (str(playerList[i][0]))[4:] # numerical character check for checking drops
-                    if (str(playerList[i][0]).startswith('Drop') and len(playerList[i][0]) <= 6 and numcheck.isnumeric()) or int(playerList[i][5]) >= lossesCutoff or int(playerList[i][2]) >= 8: #removing all players with 8 wins because of the fucked masters bracket
+                    if (str(playerList[i][0]).startswith('Drop') and len(playerList[i][0]) <= 6 and numcheck.isnumeric()) or int(playerList[i][5]) >= lossesCutoff or (int(playerList[i][2]) >= winsCutoff and winsCutoff != 0):
                         playersToRemove.append(i)
                 for index in sorted(playersToRemove, reverse = True):
                     del playerList[index]
