@@ -16,6 +16,9 @@ Create a .env file with a variable "token", receiving the discord bot token gene
 
 ###### _For more information, refer to [.env documentation](https://pypi.org/project/python-dotenv/)_
 
+Generate google credentials on the google cloud console with sheets api enabled.
+
+###### _For more information, refer to [google api documentation](https://cloud.google.com/apis/docs/overview)_
 ---
 
 #### Auto setup:
