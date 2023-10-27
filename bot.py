@@ -596,4 +596,6 @@ async def on_message(message: discord.Message):
                     spreadsheet_service.spreadsheets().batchUpdate(spreadsheetId=message_args[0], body=roundUpdate).execute()
 
 
+
+
 client.run(config['token'])
