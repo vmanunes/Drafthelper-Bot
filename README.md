@@ -1,6 +1,6 @@
 # Drafthelper-Bot
 
-Discord bot focused on quality of life tools for drafting tournaments on smogon discord server and bracketmaker tools for a swiss tournament integrated with google sheets.
+Discord bot focused on quality of life tools for draft tournaments on smogon discord server and swiss bracketmaker tools with google sheets integration.
 
 ---
 
