@@ -156,7 +156,7 @@ async def on_message(message: discord.Message):
 
     # Admin commands Help
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------   
-    if message.content.startswith('s!helpAdmin'):
+    if message.content.startswith('s!adminHelp'):
         if rolecheck == False:
             await message.channel.send('You do not have the required permissions to run this command!')
             return
