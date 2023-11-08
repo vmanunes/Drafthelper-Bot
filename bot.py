@@ -127,8 +127,8 @@ async def on_message(message: discord.Message):
             rolecheck = True
         if role.name in 'Discord Staff':
             rolecheck = True
-        if role.name in 'Tournament Staff':
-            rolecheck = True
+        #if role.name in 'Tournament Staff':
+        #    rolecheck = True
 
     # --------------------------------------------------------------------------------------------------
     # General use commands
@@ -203,7 +203,7 @@ async def on_message(message: discord.Message):
                     scheduleMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][1]['values'][0]
                     await message.channel.send(scheduleMessage['formattedValue'])
                     scheduleCd = True
-                    await asyncio.sleep(60)
+                    await asyncio.sleep(600)
                     scheduleCd = False
         else:
             if rolecheck == True:
@@ -221,7 +221,7 @@ async def on_message(message: discord.Message):
                     nextMatchMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][2]['values'][0]
                     await message.channel.send(nextMatchMessage['formattedValue'])
                     nextMatchCd = True
-                    await asyncio.sleep(60)
+                    await asyncio.sleep(300)
                     nextMatchCd = False
         else:
             if rolecheck == True:
@@ -241,7 +241,7 @@ async def on_message(message: discord.Message):
             embed.add_field(name='s!circuit',value="Links to the subforum's calendar thread on the Smogon forums and to the circuit spreadsheet.", inline=False)
             await message.channel.send(embed=embed)
             helpCd = True
-            await asyncio.sleep(5)
+            await asyncio.sleep(30)
             helpCd = False
         else:
             if rolecheck == True:
