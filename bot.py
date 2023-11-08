@@ -2,7 +2,7 @@ from __future__ import print_function
 import discord
 import math
 import random
-import time
+import asyncio
 from discord import app_commands
 from discord.enums import ChannelType
 from googleapiclient.discovery import build 
@@ -135,7 +135,7 @@ async def on_message(message: discord.Message):
         if pingCd == False:
             await message.reply('Pong.')
             pingCd = True
-            time.sleep(5)
+            await asyncio.sleep(5)
             pingCd = False
         else:
             if rolecheck == True:
@@ -147,7 +147,7 @@ async def on_message(message: discord.Message):
         if resourcesCd == False:
             await message.reply('You can find resources that will help introduce you to the Draft format, or run your own league, on the following thread: https://www.smogon.com/forums/threads/draft-league-resources.3716128/')
             resourcesCd = True
-            time.sleep(60)
+            await asyncio.sleep(60)
             resourcesCd = False
         else:
             if rolecheck == True:
@@ -159,7 +159,7 @@ async def on_message(message: discord.Message):
         if templateCd == False:
             await message.reply('<https://spo.ink/draft_league_16_coach_template>')
             templateCd = True
-            time.sleep(60)
+            await asyncio.sleep(60)
             templateCd = False
         else:
             if rolecheck == True:
@@ -171,7 +171,7 @@ async def on_message(message: discord.Message):
         if sampleCd == False:
             await message.reply('The sample draft boards are currently being updated to account for the DLC release and will be available later.')
             sampleCd = True
-            time.sleep(60)
+            await asyncio.sleep(60)
             sampleCd = False
         else:
             if rolecheck == True:
@@ -183,7 +183,7 @@ async def on_message(message: discord.Message):
         if circuitCd == False:
             await message.reply("All information regarding this year's circuit can be found at <https://www.smogon.com/forums/threads/calendar.3713506/> and the current circuit standings can be found on this spreadsheet <https://spo.ink/draft_league_circuit_2023>.")
             circuitCd = True
-            time.sleep(60)
+            await asyncio.sleep(60)
             circuitCd = False
         else:
             if rolecheck == True:
