@@ -2,6 +2,7 @@ from __future__ import print_function
 import discord
 import math
 import random
+import time
 from discord import app_commands
 from discord.enums import ChannelType
 from googleapiclient.discovery import build 
@@ -98,7 +99,14 @@ def create_matchup (player1name,player1id,player2name,player2id,rowNumber,rowOff
 # --------------------------------------------------------------------------------------------------     
 # -------------------------------------------------------------------------------------------------- 
 
+# global variables
 toggleRoleMessages = False
+# trackers to check if public commands have been called recently, there's probably a better way to do this
+resourcesCd = False
+templateCd = False
+sampleCd = False
+circuitCd = False
+pingCd = False
 
 @client.event
 async def on_ready():
@@ -123,31 +131,71 @@ async def on_message(message: discord.Message):
 
     # ping
     if message.content.startswith('s!ping'):
-        await message.reply('Pong.')
+        global pingCd
+        if pingCd == False:
+            await message.reply('Pong.')
+            pingCd = True
+            time.sleep(5)
+            pingCd = False
+        else:
+            if rolecheck == True:
+                await message.reply('Pong.')
 
     # Resources
     if message.content.startswith('s!resources'):
-        await message.reply('You may find resources that may help introduce you to the draft format or run your own league on the following thread: https://www.smogon.com/forums/threads/draft-league-resources.3716128/')
+        global resourcesCd
+        if resourcesCd == False:
+            await message.reply('You can find resources that will help introduce you to the Draft format, or run your own league, on the following thread: https://www.smogon.com/forums/threads/draft-league-resources.3716128/')
+            resourcesCd = True
+            time.sleep(60)
+            resourcesCd = False
+        else:
+            if rolecheck == True:
+                await message.reply('You can find resources that will help introduce you to the Draft format, or run your own league, on the following thread: https://www.smogon.com/forums/threads/draft-league-resources.3716128/')
 
     # Template
     if message.content.startswith('s!template'):
-        await message.reply('The sheet template is currently being updated to account for the DLC release and will be available later.')
+        global templateCd
+        if templateCd == False:
+            await message.reply('<https://spo.ink/draft_league_16_coach_template>')
+            templateCd = True
+            time.sleep(60)
+            templateCd = False
+        else:
+            if rolecheck == True:
+                await message.reply('<https://spo.ink/draft_league_16_coach_template>')
     
     # Tiers
-    if message.content.startswith('s!tiers'):
-        await message.reply('The tier lists are currently being updated to account for the DLC release and will be available later.')
+    if message.content.startswith('s!sample'):
+        global sampleCd
+        if sampleCd == False:
+            await message.reply('The sample draft boards are currently being updated to account for the DLC release and will be available later.')
+            sampleCd = True
+            time.sleep(60)
+            sampleCd = False
+        else:
+            if rolecheck == True:
+                await message.reply('The sample draft boards are currently being updated to account for the DLC release and will be available later.')
     
     # Circuit
     if message.content.startswith('s!circuit'):
-        await message.reply('All information related to the current draft circuit may be found at this smogon thread: https://www.smogon.com/forums/threads/draft-league-tournament-schedule-and-announcements-2023.3713506/ and on this spreadsheet: https://docs.google.com/spreadsheets/d/1sBMOgbst-ZlAjy-bshpZrCs2Tv0GRcEQIl7VjhGSh44/ .')
-    
+        global circuitCd
+        if circuitCd == False:
+            await message.reply("All information regarding this year's circuit can be found at <https://www.smogon.com/forums/threads/calendar.3713506/> and the current circuit standings can be found on this spreadsheet <https://spo.ink/draft_league_circuit_2023>.")
+            circuitCd = True
+            time.sleep(60)
+            circuitCd = False
+        else:
+            if rolecheck == True:
+                await message.reply("All information regarding this year's circuit can be found at <https://www.smogon.com/forums/threads/calendar.3713506/> and the current circuit standings can be found on this spreadsheet <https://spo.ink/draft_league_circuit_2023>.")
+
     # Help
     if message.content.startswith('s!help'):
         embed = discord.Embed(title='DraftHelper Commands')
-        embed.add_field(name='s!resources',value='Link to the resources thread on the smogon forum.', inline=False)
-        embed.add_field(name='s!template',value='Link to the sheet template used by the tournaments.', inline=False)
-        embed.add_field(name='s!tiers',value='Link to the updated tier lists currently being used for our tournaments.', inline=False)
-        embed.add_field(name='s!circuit',value='Links to the circuit announcements thread on the smogon forum and to the sheet currently being used for the circuit.', inline=False)
+        embed.add_field(name='s!resources',value='Links to the resources thread on the Smogon forums.', inline=False)
+        embed.add_field(name='s!template',value='Links to a 16 coach draft template sheet.', inline=False)
+        embed.add_field(name='s!sample',value='Links to sample draft boards for various different draft formats.', inline=False)
+        embed.add_field(name='s!circuit',value="Links to the subforum's calendar thread on the Smogon forums and to the circuit spreadsheet.", inline=False)
         await message.channel.send(embed=embed)
 
     # --------------------------------------------------------------------------------------------------
