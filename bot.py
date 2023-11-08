@@ -125,6 +125,8 @@ async def on_message(message: discord.Message):
         # UPDATE LATER WITH FLEXIBLE ADMIN ROLES FOR EACH SERVER
         if role.permissions.administrator:
             rolecheck = True
+        if role.name in 'Discord Staff':
+            rolecheck = True
         if role.name in 'Tournament Staff':
             rolecheck = True
 
