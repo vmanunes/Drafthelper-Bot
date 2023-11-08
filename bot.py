@@ -196,9 +196,9 @@ async def on_message(message: discord.Message):
         global scheduleCd
         if scheduleCd == False:
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId='1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
-            if ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][1]['values'][0].keys()) and ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][0].keys()):
-                    scheduleMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][1]['values'][0]
-                    nextMatchMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][0]
+            if ('formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][1]['values'][0].keys()) and ('formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][2]['values'][0].keys()):
+                    scheduleMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][1]['values'][0]
+                    nextMatchMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][2]['values'][0]
                     await message.channel.send(scheduleMessage['formattedValue'])
                     await message.channel.send(nextMatchMessage['formattedValue'])
                     scheduleCd = True
@@ -207,9 +207,9 @@ async def on_message(message: discord.Message):
         else:
             if rolecheck == True:
                 spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId='1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
-                if ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][1]['values'][0].keys()) and ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][0].keys()):
-                        scheduleMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][0]['values'][0]
-                        nextMatchMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][0]
+                if ('formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][1]['values'][0].keys()) and ('formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][2]['values'][0].keys()):
+                        scheduleMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][0]['values'][0]
+                        nextMatchMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][2]['values'][0]
                         await message.channel.send(scheduleMessage['formattedValue'])
                         await message.channel.send(nextMatchMessage['formattedValue'])
             
