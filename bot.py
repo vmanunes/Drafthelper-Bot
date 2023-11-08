@@ -107,6 +107,7 @@ templateCd = False
 sampleCd = False
 circuitCd = False
 pingCd = False
+helpCd = False
 
 @client.event
 async def on_ready():
@@ -191,12 +192,26 @@ async def on_message(message: discord.Message):
 
     # Help
     if message.content.startswith('s!help'):
-        embed = discord.Embed(title='DraftHelper Commands')
-        embed.add_field(name='s!resources',value='Links to the resources thread on the Smogon forums.', inline=False)
-        embed.add_field(name='s!template',value='Links to a 16 coach draft template sheet.', inline=False)
-        embed.add_field(name='s!sample',value='Links to sample draft boards for various different draft formats.', inline=False)
-        embed.add_field(name='s!circuit',value="Links to the subforum's calendar thread on the Smogon forums and to the circuit spreadsheet.", inline=False)
-        await message.channel.send(embed=embed)
+        global helpCd
+        if helpCd == False:
+            embed = discord.Embed(title='DraftHelper Commands')
+            embed.add_field(name='s!resources',value='Links to the resources thread on the Smogon forums.', inline=False)
+            embed.add_field(name='s!template',value='Links to a 16 coach draft template sheet.', inline=False)
+            embed.add_field(name='s!sample',value='Links to sample draft boards for various different draft formats.', inline=False)
+            embed.add_field(name='s!circuit',value="Links to the subforum's calendar thread on the Smogon forums and to the circuit spreadsheet.", inline=False)
+            await message.channel.send(embed=embed)
+            helpCd = True
+            await asyncio.sleep(5)
+            helpCd = False
+        else:
+            if rolecheck == True:
+                embed = discord.Embed(title='DraftHelper Commands')
+                embed.add_field(name='s!resources',value='Links to the resources thread on the Smogon forums.', inline=False)
+                embed.add_field(name='s!template',value='Links to a 16 coach draft template sheet.', inline=False)
+                embed.add_field(name='s!sample',value='Links to sample draft boards for various different draft formats.', inline=False)
+                embed.add_field(name='s!circuit',value="Links to the subforum's calendar thread on the Smogon forums and to the circuit spreadsheet.", inline=False)
+                await message.channel.send(embed=embed)
+
 
     # --------------------------------------------------------------------------------------------------
     # Admin commands
