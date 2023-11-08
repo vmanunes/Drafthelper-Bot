@@ -108,6 +108,7 @@ sampleCd = False
 circuitCd = False
 pingCd = False
 helpCd = False
+scheduleCd = False
 
 @client.event
 async def on_ready():
@@ -190,6 +191,28 @@ async def on_message(message: discord.Message):
             if rolecheck == True:
                 await message.reply("All information regarding this year's circuit can be found at <https://www.smogon.com/forums/threads/calendar.3713506/> and the current circuit standings can be found on this spreadsheet <https://spo.ink/draft_league_circuit_2023>.")
 
+    # DCL Schedule
+    if message.content.startswith('s!schedule'):
+        global scheduleCd
+        if scheduleCd == False:
+            spreadsheet = spreadsheet_service.spreadsheets().get('1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
+            if ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][1]['values'][3].keys()) and ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][3].keys()):
+                    scheduleMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][1]['values'][3]
+                    nextMatchMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][3]
+                    await message.channel.send(scheduleMessage['formattedValue'])
+                    await message.channel.send(nextMatchMessage['formattedValue'])
+                    scheduleCd = True
+                    await asyncio.sleep(60)
+                    scheduleCd = False
+        else:
+            if rolecheck == True:
+                spreadsheet = spreadsheet_service.spreadsheets().get('1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
+                if ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][1]['values'][3].keys()) and ('formattedValue' in spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][3].keys()):
+                        scheduleMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][1]['values'][3]
+                        nextMatchMessage = spreadsheet['sheet'][0]['data'][0]['rowData'][2]['values'][3]
+                        await message.channel.send(scheduleMessage['formattedValue'])
+                        await message.channel.send(nextMatchMessage['formattedValue'])
+            
     # Help
     if message.content.startswith('s!help'):
         global helpCd
