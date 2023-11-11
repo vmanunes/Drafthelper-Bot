@@ -229,6 +229,24 @@ async def on_message(message: discord.Message):
                 if 'formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][2]['values'][0].keys():
                         nextMatchMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][2]['values'][0]
                         await message.channel.send(nextMatchMessage['formattedValue'])
+    
+    # DCL Matches today
+    if message.content.startswith('s!today'):
+        global nextMatchCd
+        if nextMatchCd == False:
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId='1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
+            if 'formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][3]['values'][0].keys():
+                    nextMatchMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][3]['values'][0]
+                    await message.channel.send(nextMatchMessage['formattedValue'])
+                    nextMatchCd = True
+                    await asyncio.sleep(300)
+                    nextMatchCd = False
+        else:
+            if rolecheck == True:
+                spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId='1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
+                if 'formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][3]['values'][0].keys():
+                        nextMatchMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][3]['values'][0]
+                        await message.channel.send(nextMatchMessage['formattedValue'])
             
     # Help
     if message.content.startswith('s!help'):
@@ -239,6 +257,9 @@ async def on_message(message: discord.Message):
             embed.add_field(name='s!template',value='Links to a 16 coach draft template sheet.', inline=False)
             embed.add_field(name='s!sample',value='Links to sample draft boards for various different draft formats.', inline=False)
             embed.add_field(name='s!circuit',value="Links to the subforum's calendar thread on the Smogon forums and to the circuit spreadsheet.", inline=False)
+            embed.add_field(name='s!schedule',value="Displays the full schedule for the current week in DCL.")
+            embed.add_field(name='s!next',value="Displays the next scheduled match(es) for the current week in DCL.")
+            embed.add_field(name='s!today',value="Displays all DCL matches that are scheduled for today.")
             await message.channel.send(embed=embed)
             helpCd = True
             await asyncio.sleep(30)
@@ -250,6 +271,9 @@ async def on_message(message: discord.Message):
                 embed.add_field(name='s!template',value='Links to a 16 coach draft template sheet.', inline=False)
                 embed.add_field(name='s!sample',value='Links to sample draft boards for various different draft formats.', inline=False)
                 embed.add_field(name='s!circuit',value="Links to the subforum's calendar thread on the Smogon forums and to the circuit spreadsheet.", inline=False)
+                embed.add_field(name='s!schedule',value="Displays the full schedule for the current week in DCL.")
+                embed.add_field(name='s!next',value="Displays the next scheduled match(es) for the current week in DCL.")
+                embed.add_field(name='s!today',value="Displays all DCL matches that are scheduled for today.")
                 await message.channel.send(embed=embed)
 
 
