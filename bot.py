@@ -110,6 +110,7 @@ pingCd = False
 helpCd = False
 scheduleCd = False
 nextMatchCd = False
+todayCd = False
 
 @client.event
 async def on_ready():
@@ -232,15 +233,15 @@ async def on_message(message: discord.Message):
     
     # DCL Matches today
     if message.content.startswith('s!today'):
-        global nextMatchCd
-        if nextMatchCd == False:
+        global todayCd
+        if todayCd == False:
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId='1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
             if 'formattedValue' in spreadsheet['sheets'][0]['data'][0]['rowData'][3]['values'][0].keys():
                     nextMatchMessage = spreadsheet['sheets'][0]['data'][0]['rowData'][3]['values'][0]
                     await message.channel.send(nextMatchMessage['formattedValue'])
-                    nextMatchCd = True
+                    todayCd = True
                     await asyncio.sleep(300)
-                    nextMatchCd = False
+                    todayCd = False
         else:
             if rolecheck == True:
                 spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId='1oDzkyszf12fSlG8LtRdsNNTowWTcgpjo36FuP9dAI3k',includeGridData=True, ranges='Bot!C:C').execute()
