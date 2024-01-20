@@ -8,6 +8,7 @@ from discord.enums import ChannelType
 from googleapiclient.discovery import build 
 from google.oauth2 import service_account
 from dotenv import dotenv_values
+from collections import namedtuple
 
 SCOPES = [
 'https://www.googleapis.com/auth/spreadsheets',
@@ -111,6 +112,8 @@ helpCd = False
 scheduleCd = False
 nextMatchCd = False
 todayCd = False
+
+PlayerData = namedtuple('PlayerData', ['name','wins','res','uid','losses'])
 
 @client.event
 async def on_ready():
@@ -457,6 +460,17 @@ async def on_message(message: discord.Message):
         thisGuild = client.get_guild(message.guild.id)
         for channel in thisGuild.text_channels:
             if 'draft-done' in channel.name:
+                thisChannelThreads = channel.threads
+                pins = await channel.pins()
+                for i in thisChannelThreads:
+                    if i.owner == client.user:
+                        await i.delete()
+                async for i in channel.archived_threads():
+                    if i.owner == client.user:
+                        await i.delete()
+                for i in pins:
+                    if i.author == client.user:
+                        await i.unpin()
                 splitName = channel.name.split('-')
                 newName = '{}-{}'.format(splitName[0],splitName[1])
                 await channel.edit(name=newName)
@@ -528,7 +542,7 @@ async def on_message(message: discord.Message):
         thisGuild = client.get_guild(message.guild.id)
         # UPDATE THIS WITH A PARAMETER LATER
         for role in thisGuild.roles:
-            if 'Summer Seasonal Competitor' in role.name:
+            if 'Teal Mask Trios' in role.name:
                 for member in role.members:
                     # await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
                     await member.remove_roles(role)
@@ -552,7 +566,7 @@ async def on_message(message: discord.Message):
         else:
             # get sheets
             # dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Data!A:AL').execute()
-            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges=['Data!A:AL','Match History!A:G']).execute()
+            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges=['Swiss!A:AL','Match History!A:G']).execute()
             dataId = dataSpreadsheet['sheets'][0]['properties']['sheetId'] # get ID of data spreadsheet in the google doc
             matchupId = dataSpreadsheet['sheets'][1]['properties']['sheetId'] # get ID of matchup spreadsheet in the google doc
             lossesCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][7]['values'][1]['effectiveValue']['numberValue'] # get number of losses for which players are eliminated
@@ -596,22 +610,25 @@ async def on_message(message: discord.Message):
                     if 'formattedValue' in row['values'][32].keys():
                         if index != 0:
                             sLname = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][32]['formattedValue'] # get player name
-                            sLgp = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][33]['formattedValue'] # get player games played
+                            # sLgp = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][33]['formattedValue'] # get player games played
                             sLwins = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][34]['formattedValue'] # get player wins
                             sLres = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][36]['formattedValue'] # get player resistance
                             sLuid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][37]['formattedValue'] # get player uid
                             sLlosses = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][35]['formattedValue'] # get player losses
-                            subList = [sLname, sLgp, sLwins, sLres, sLuid, sLlosses] # create sublist with player data
-                            playerList.append(subList) # add sublist to the player list
+                            numcheck = (sLname)[4:] # numerical character check for checking drops
+                            if not (sLname.startswith('Drop') and len(sLname) <= 6 and numcheck.isnumeric()) and not (int(sLlosses) >= lossesCutoff) and not (int(sLwins) >= winsCutoff and winsCutoff != 0):
+                                # subList = [sLname, sLwins, sLres, sLuid, sLlosses] # create sublist from player data
+                                pData = PlayerData(sLname,sLwins,sLres,sLuid,sLlosses)
+                                playerList.append(pData) # add player info to the player list
 
                 # remove drops and eliminated players from player list
-                playersToRemove = []
-                for i in range(0,len(playerList)):
-                    numcheck = (str(playerList[i][0]))[4:] # numerical character check for checking drops
-                    if (str(playerList[i][0]).startswith('Drop') and len(playerList[i][0]) <= 6 and numcheck.isnumeric()) or int(playerList[i][5]) >= lossesCutoff or (int(playerList[i][2]) >= winsCutoff and winsCutoff != 0):
-                        playersToRemove.append(i)
-                for index in sorted(playersToRemove, reverse = True):
-                    del playerList[index]
+                # playersToRemove = []
+                # for i in range(0,len(playerList)):
+                #     numcheck = (str(playerList[i][0]))[4:] # numerical character check for checking drops
+                #     if (str(playerList[i][0]).startswith('Drop') and len(playerList[i][0]) <= 6 and numcheck.isnumeric()) or int(playerList[i][5]) >= lossesCutoff or (int(playerList[i][2]) >= winsCutoff and winsCutoff != 0):
+                #         playersToRemove.append(i)
+                # for index in sorted(playersToRemove, reverse = True):
+                #     del playerList[index]
 
                 # check if odd number of players
                 oddRound = False
@@ -631,18 +648,18 @@ async def on_message(message: discord.Message):
                             emptyCell = first_empty_cell(dataSpreadsheet,1,1) # get first empty row in match history
                             if count == 0: # if it's the first pairing, get index 0 and 1 on player list
                                 player1 = playerList[0][0]
-                                player1uid = playerList[0][4]
+                                player1uid = playerList[0][3]
                                 player2 = playerList[1][0]
-                                player2uid = playerList[1][4]
-                                player1losses = playerList[0][5]
-                                player2losses = playerList[1][5]
+                                player2uid = playerList[1][3]
+                                player1losses = playerList[0][4]
+                                player2losses = playerList[1][4]
                             else: # if it's not the first pairing, use the count of pairings generated to get the index numbers of players in the list
                                 player1 = playerList[(count*2)][0]
-                                player1uid = playerList[(count*2)][4]
+                                player1uid = playerList[(count*2)][3]
                                 player2 = playerList[(count*2)+1][0]
-                                player2uid = playerList[(count*2)+1][4]
-                                player1losses = playerList[(count*2)][5]
-                                player2losses = playerList[(count*2)+1][5]
+                                player2uid = playerList[(count*2)+1][3]
+                                player1losses = playerList[(count*2)][4]
+                                player2losses = playerList[(count*2)+1][4]
                             create_matchup(player1,player1uid,player2,player2uid,emptyCell,count,updatedRoundNumber,updateRequests,dataId,matchupId,player1losses,player2losses) # create matchup sheet update request
                     else:
                         # if it's not the first round, generate a list based on standings, excluding repeated matchups and selecting a random opponent if there are two or more valid pairings
@@ -652,9 +669,9 @@ async def on_message(message: discord.Message):
 
                             #get player 1
                             player1 = playerList[0][0]
-                            # player1wins = playerList[0][2] # not used anymore
-                            player1uid = playerList[0][4]
-                            player1losses = playerList[0][5]
+                            player1wins = playerList[0][1]
+                            player1uid = playerList[0][3]
+                            player1losses = playerList[0][4]
 
                             # check if a bye was picked up as player 1
                             if str(playerList[0][0]).startswith('Bye') and len(playerList[0][0]) <= 5:
@@ -678,38 +695,53 @@ async def on_message(message: discord.Message):
                             # generate list of valid matchups for this round
                             validMatchups = []
                             for i in range(len(playerList)):
-                                # get the W/Res we're trying to match player 1 with
-                                if i == 0:
-                                    for z in range(len(playerList)):
-                                        if playerList[z][4] not in previouslyPlayed:
-                                            targetWins = playerList[z][2]
-                                            targetRes = playerList[z][3]
-                                            # prevent bye from matching up with bye
-                                            if player1isBye:
-                                                if not (str(playerList[z][0]).startswith('Bye') and len(playerList[z][0]) <= 5):
-                                                    validMatchups.append(playerList[z])
-                                                    break
-                                            else:
-                                                validMatchups.append(playerList[z])
-                                                break
-                                else:
+                                # # get the W/Res we're trying to match player 1 with
+                                # if i == 0:
+                                #     for z in range(len(playerList)):
+                                #         if playerList[z][4] not in previouslyPlayed:
+                                #             targetWins = playerList[z][1]
+                                #             targetRes = playerList[z][2] 
+                                #             # prevent bye from matching up with bye
+                                #             if player1isBye:
+                                #                 if not (str(playerList[z][0]).startswith('Bye') and len(playerList[z][0]) <= 5):
+                                #                     validMatchups.append(playerList[z])
+                                #                     break
+                                #             else:
+                                #                 validMatchups.append(playerList[z])
+                                #                 break
+                                # else:
                                     # check if other players have the same W/Res scores
-                                    if playerList[i][2] == targetWins and playerList[i][3] == targetRes:
-                                        if playerList[i][4] not in previouslyPlayed:
+                                if playerList[i][1] == player1wins:# and playerList[i][2] == targetRes: #Resistance based matchmaking disabled
+                                    if playerList[i][3] not in previouslyPlayed:
+                                        # prevent bye from matching up with bye
+                                        if player1isBye:
+                                            if not (str(playerList[z][0]).startswith('Bye') and len(playerList[z][0]) <= 5):
+                                                validMatchups.append(playerList[i])
+                                        else:
+                                            validMatchups.append(playerList[i])
+                                if len(validMatchups) == 0 and len(playerList) > 0:
+                                    if int(playerList[i][1]) == (int(player1wins) - 1):# and playerList[i][2] == targetRes: #Resistance based matchmaking disabled
+                                        if playerList[i][3] not in previouslyPlayed:
                                             # prevent bye from matching up with bye
                                             if player1isBye:
                                                 if not (str(playerList[z][0]).startswith('Bye') and len(playerList[z][0]) <= 5):
                                                     validMatchups.append(playerList[i])
                                             else:
                                                 validMatchups.append(playerList[i])
-                                    else:
-                                        break
+                                else:
+                                    break
+                                        
 
                             # get player 2        
                             if len(validMatchups) == 0:
                                 # if this is not a round with an odd number of players, output an error if a valid matchup is not found, else generate a bye
                                 if not oddRound:
                                     await message.channel.send('{}**Warning!** Could not find a valid matchup for player {}! Are you running too many rounds of swiss for your player pool size? (If you think this is an error, please contact @vmnunes on discord or smogon)'.format(f'{message.author.mention}',str(player1)))
+                                    player2 = 'BYE'
+                                    player2uid = '-'
+                                    player2losses = '0'
+                                    # player2wins = '0' # no longer used
+                                    player2bye = True
                                 else:
                                     player2 = 'BYE'
                                     player2uid = '-'
@@ -721,12 +753,12 @@ async def on_message(message: discord.Message):
                                 if player2bye == False:
                                     randomPick = random.randint(0,(len(validMatchups)-1))
                                     player2 = validMatchups[randomPick][0]
-                                    player2uid = validMatchups[randomPick][4]
+                                    player2uid = validMatchups[randomPick][3]
                                     # player2wins = validMatchups[randomPick][2] #not used anymore
-                                    player2losses = validMatchups[randomPick][5]
+                                    player2losses = validMatchups[randomPick][4]
                                     player2index = 0
                                     for i in range(len(playerList)):
-                                        if playerList[i][4] == player2uid:
+                                        if playerList[i][3] == player2uid:
                                             player2index = i
                                             break
                                     del playerList[player2index]
