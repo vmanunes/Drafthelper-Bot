@@ -719,7 +719,10 @@ async def on_message(message: discord.Message):
                                                 validMatchups.append(playerList[i])
                                         else:
                                             validMatchups.append(playerList[i])
-                                if len(validMatchups) == 0 and len(playerList) > 0:
+                                else:
+                                    break
+                            if len(validMatchups) == 0 and len(playerList) > 0:
+                                for i in range(len(playerList)):
                                     if int(playerList[i][1]) == (int(player1wins) - 1):# and playerList[i][2] == targetRes: #Resistance based matchmaking disabled
                                         if playerList[i][3] not in previouslyPlayed:
                                             # prevent bye from matching up with bye
@@ -728,8 +731,8 @@ async def on_message(message: discord.Message):
                                                     validMatchups.append(playerList[i])
                                             else:
                                                 validMatchups.append(playerList[i])
-                                else:
-                                    break
+                                    else:
+                                        break
                                         
 
                             # get player 2        
