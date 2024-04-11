@@ -131,8 +131,8 @@ async def on_message(message: discord.Message):
             rolecheck = True
         if role.name in 'Discord Staff':
             rolecheck = True
-        #if role.name in 'Tournament Staff':
-        #    rolecheck = True
+        if role.name in 'Tournament Staff':
+            rolecheck = True
 
     # --------------------------------------------------------------------------------------------------
     # General use commands
@@ -542,7 +542,7 @@ async def on_message(message: discord.Message):
         thisGuild = client.get_guild(message.guild.id)
         # UPDATE THIS WITH A PARAMETER LATER
         for role in thisGuild.roles:
-            if 'Teal Mask Trios' in role.name:
+            if 'NatDex Ubers Competitor' in role.name:
                 for member in role.members:
                     # await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
                     await member.remove_roles(role)
