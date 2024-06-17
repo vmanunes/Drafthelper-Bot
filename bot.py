@@ -538,17 +538,42 @@ async def on_message(message: discord.Message):
         if rolecheck == False:
             await message.channel.send('You do not have the required permissions to run this command!')
             return
-        await message.channel.send('Removing competitor roles. This might take some time.')
-        thisGuild = client.get_guild(message.guild.id)
-        # UPDATE THIS WITH A PARAMETER LATER
-        for role in thisGuild.roles:
-            if 'NatDex Ubers Competitor' in role.name:
-                for member in role.members:
-                    # await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
-                    await member.remove_roles(role)
-                    if toggleRoleMessages:
-                        await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
-        await message.channel.send('**{}: All competitor roles have been removed.**'.format(f'{message.author.mention}'))
+        message_args = message.content.split(' ', 1)[1:]
+        if len(message_args) == 0:
+            await message.channel.send('This command requires 1 argument (i.e. s!removeCompetitorRoles [role name])')
+        else:
+            await message.channel.send('Removing competitor roles. This might take some time.')
+            thisGuild = client.get_guild(message.guild.id)
+            for role in thisGuild.roles:
+                if message_args[0] in role.name:
+                    for member in role.members:
+                        # await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
+                        await member.remove_roles(role)
+                        if toggleRoleMessages:
+                            await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
+            await message.channel.send('**{}: All competitor roles have been removed.**'.format(f'{message.author.mention}'))
+
+    if message.content.startswith("s!removeRoles"):
+        if rolecheck == False:
+            await message.channel.send('You do not have the required permissions to run this command!')
+            return
+        message_args = message.content.split(' ', 1)[1:]
+        if len(message_args) == 0:
+            await message.channel.send('This command requires 1 argument (i.e. s!removeRoles [id])')
+        else:
+            await message.channel.send('Removing specific roles. This might take some time.')
+            thisGuild = client.get_guild(message.guild.id)
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Role Removal!A:B').execute()
+            for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                    memberName = row['values'][0]
+                    roleName = row['values'][1]
+                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                    if member != None:                       
+                        await member.remove_roles(roleName)
+                        if toggleRoleMessages:
+                            await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
+            await message.channel.send('**{}: Specified roles have been removed.**'.format(f'{message.author.mention}'))
 
 # -------------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------
