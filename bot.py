@@ -526,7 +526,7 @@ async def on_message(message: discord.Message):
                         # debug check end
                         for role in member.roles:
                             if role.name in 'Not Verified':
-                                await message.channel.send('***!!! User {} is not verified !!!***'.format(member.display_name))
+                                await message.channel.send('***{}***'.format(member.display_name))
                                 # await message.channel.send('{}'.format(member.display_name))
                     else:
                         if toggleRoleMessages:
