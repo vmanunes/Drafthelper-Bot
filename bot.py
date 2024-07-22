@@ -634,12 +634,12 @@ async def on_message(message: discord.Message):
                 for index, row in enumerate(dataSpreadsheet['sheets'][0]['data'][0]['rowData']): 
                     if 'formattedValue' in row['values'][32].keys():
                         if index != 0:
-                            sLname = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][32]['formattedValue'] # get player name
+                            sLname = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][33]['formattedValue'] # get player name
                             # sLgp = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][33]['formattedValue'] # get player games played
-                            sLwins = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][34]['formattedValue'] # get player wins
-                            sLres = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][36]['formattedValue'] # get player resistance
-                            sLuid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][37]['formattedValue'] # get player uid
-                            sLlosses = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][35]['formattedValue'] # get player losses
+                            sLwins = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][35]['formattedValue'] # get player wins
+                            sLres = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][37]['formattedValue'] # get player resistance
+                            sLuid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][38]['formattedValue'] # get player uid
+                            sLlosses = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][36]['formattedValue'] # get player losses
                             numcheck = (sLname)[4:] # numerical character check for checking drops
                             if not (sLname.startswith('Drop') and len(sLname) <= 6 and numcheck.isnumeric()) and not (int(sLlosses) >= lossesCutoff) and not (int(sLwins) >= winsCutoff and winsCutoff != 0):
                                 # subList = [sLname, sLwins, sLres, sLuid, sLlosses] # create sublist from player data
@@ -707,13 +707,13 @@ async def on_message(message: discord.Message):
                             # generate list of previous matchups
                             previouslyPlayed = []
                             if roundNumber == 1:
-                                if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][9].keys(): # check to see if value exists
-                                    tempUid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][9]['formattedValue']
+                                if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][10].keys(): # check to see if value exists
+                                    tempUid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][10]['formattedValue']
                                     previouslyPlayed.append(tempUid)
                             else:
                                 for i in range(0,(roundNumber)):
-                                    if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][(i+9)].keys(): # check to see if value exists
-                                        tempUid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][(i+9)]['formattedValue']
+                                    if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][(i+10)].keys(): # check to see if value exists
+                                        tempUid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][(i+10)]['formattedValue']
                                         previouslyPlayed.append(tempUid)
                             del playerList[0] # remove player 1 from the player list
 
