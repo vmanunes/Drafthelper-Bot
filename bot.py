@@ -91,8 +91,8 @@ def create_matchup (player1name,player1id,player2name,player2id,rowNumber,rowOff
     edit_cell(matchupSheetId,(rowNumber+rowOffset),4,player1loss,request,False)
     edit_cell(matchupSheetId,(rowNumber+rowOffset),5,player2loss,request,False)
     if player2name != 'BYE' and player2id != '-':
-        edit_cell(dataSheetId,(int(player1id)),(int(roundNumber)+8),player2id,request,True)
-        edit_cell(dataSheetId,(int(player2id)),(int(roundNumber)+8),player1id,request,True)
+        edit_cell(dataSheetId,(int(player1id)),(int(roundNumber)+9),player2id,request,True)
+        edit_cell(dataSheetId,(int(player2id)),(int(roundNumber)+9),player1id,request,True)
 
 # --------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
@@ -591,7 +591,7 @@ async def on_message(message: discord.Message):
         else:
             # get sheets
             # dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Data!A:AL').execute()
-            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges=['Swiss!A:AL','Match History!A:G']).execute()
+            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges=['Swiss!A:AM','Match History!A:G']).execute()
             dataId = dataSpreadsheet['sheets'][0]['properties']['sheetId'] # get ID of data spreadsheet in the google doc
             matchupId = dataSpreadsheet['sheets'][1]['properties']['sheetId'] # get ID of matchup spreadsheet in the google doc
             lossesCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][7]['values'][1]['effectiveValue']['numberValue'] # get number of losses for which players are eliminated
