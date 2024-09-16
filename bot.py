@@ -77,22 +77,19 @@ def edit_cell (sheetId,cellRow,cellColumn,newValue,requestList,numerical):
                 }
         })
 
-def first_empty_cell (spreadsheetId,page,column):
+def first_empty_cell (spreadsheetId,column):
     count = 0
-    for row in spreadsheetId['sheets'][page]['data'][0]['rowData']:
+    for row in spreadsheetId['sheets'][0]['data'][0]['rowData']:
         if 'formattedValue' in row['values'][column].keys():
             count += 1
     return count
 
-def create_matchup (player1name,player1id,player2name,player2id,rowNumber,rowOffset,roundNumber,request,dataSheetId,matchupSheetId,player1loss,player2loss):
-    edit_cell(matchupSheetId,(rowNumber+rowOffset),1,roundNumber,request,True)
-    edit_cell(matchupSheetId,(rowNumber+rowOffset),2,player1name,request,False)
-    edit_cell(matchupSheetId,(rowNumber+rowOffset),3,player2name,request,False)
-    edit_cell(matchupSheetId,(rowNumber+rowOffset),4,player1loss,request,False)
-    edit_cell(matchupSheetId,(rowNumber+rowOffset),5,player2loss,request,False)
-    if player2name != 'BYE' and player2id != '-':
-        edit_cell(dataSheetId,(int(player1id)),(int(roundNumber)+9),player2id,request,True)
-        edit_cell(dataSheetId,(int(player2id)),(int(roundNumber)+9),player1id,request,True)
+def create_matchup (player1name,player2name,rowNumber,rowOffset,roundNumber,request,dataSheetId,player1loss,player2loss):
+    edit_cell(dataSheetId,(rowNumber+rowOffset),14,roundNumber,request,True)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),15,player1name,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),16,player2name,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),17,player1loss,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),18,player2loss,request,False)
 
 # --------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
@@ -132,6 +129,10 @@ async def on_message(message: discord.Message):
         if role.name in 'Discord Staff':
             rolecheck = True
         if role.name in 'Tournament Staff':
+            rolecheck = True
+        if role.name in 'Masters Host':
+            rolecheck = True
+        if role.name in 'Tournament Director':
             rolecheck = True
 
     # --------------------------------------------------------------------------------------------------
@@ -590,24 +591,22 @@ async def on_message(message: discord.Message):
             await message.channel.send('This command requires 1 argument (i.e. s!updateSwissBracket [ID])')
         else:
             # get sheets
-            # dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Data!A:AL').execute()
-            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges=['Swiss!A:AM','Match History!A:G']).execute()
+            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot!A:R').execute()
             dataId = dataSpreadsheet['sheets'][0]['properties']['sheetId'] # get ID of data spreadsheet in the google doc
-            matchupId = dataSpreadsheet['sheets'][1]['properties']['sheetId'] # get ID of matchup spreadsheet in the google doc
-            lossesCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][7]['values'][1]['effectiveValue']['numberValue'] # get number of losses for which players are eliminated
-            winsCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][10]['values'][1]['effectiveValue']['numberValue'] # get number of wins for which players are no longer put into matchmaking
+            lossesCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][5]['values'][0]['effectiveValue']['numberValue'] # get number of losses for which players are eliminated
+            winsCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][7]['values'][0]['effectiveValue']['numberValue'] # get number of wins for which players are no longer put into matchmaking
 
             # update round number
-            roundNumber = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][1]['values'][1]['effectiveValue']['numberValue'] # get round number
+            roundNumber = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][1]['values'][0]['effectiveValue']['numberValue'] # get round number
             updatedRoundNumber = roundNumber + 1
             updateRequests = [] # initialize list of sheet update requests
             updateRequests.append({ #create round number update request
                 "updateCells": {
                     "range": {
                         "endRowIndex": 2, # The end row (exclusive) of the range, or not set if unbounded.
-                        "endColumnIndex": 2, # The end column (exclusive) of the range, or not set if unbounded.
+                        "endColumnIndex": 1, # The end column (exclusive) of the range, or not set if unbounded.
                         "sheetId": dataId, # The sheet this range is on.
-                        "startColumnIndex": 1, # The start column (inclusive) of the range, or not set if unbounded.
+                        "startColumnIndex": 0, # The start column (inclusive) of the range, or not set if unbounded.
                         "startRowIndex": 1, # The start row (inclusive) of the range, or not set if unbounded.
                     },
                     "rows": [
@@ -632,28 +631,17 @@ async def on_message(message: discord.Message):
                 # create player list based on standings
                 playerList = [] 
                 for index, row in enumerate(dataSpreadsheet['sheets'][0]['data'][0]['rowData']): 
-                    if 'formattedValue' in row['values'][32].keys():
+                    if 'formattedValue' in row['values'][1].keys():
                         if index != 0:
-                            sLname = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][33]['formattedValue'] # get player name
-                            # sLgp = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][33]['formattedValue'] # get player games played
-                            sLwins = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][35]['formattedValue'] # get player wins
-                            sLres = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][37]['formattedValue'] # get player resistance
-                            sLuid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][38]['formattedValue'] # get player uid
-                            sLlosses = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][36]['formattedValue'] # get player losses
-                            numcheck = (sLname)[4:] # numerical character check for checking drops
-                            if not (sLname.startswith('Drop') and len(sLname) <= 6 and numcheck.isnumeric()) and not (int(sLlosses) >= lossesCutoff) and not (int(sLwins) >= winsCutoff and winsCutoff != 0):
+                            sLid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][1]['formattedValue'] # get player id
+                            sLwins = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][2]['formattedValue'] # get player id
+                            sLlosses = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][3]['formattedValue'] # get player losses
+                            sLindex = index
+                            if not (int(sLlosses) >= lossesCutoff) and not (int(sLwins) >= winsCutoff and winsCutoff != 0):
                                 # subList = [sLname, sLwins, sLres, sLuid, sLlosses] # create sublist from player data
-                                pData = PlayerData(sLname,sLwins,sLres,sLuid,sLlosses)
+                                pData = PlayerData(sLid,sLwins,sLlosses,sLindex)
                                 playerList.append(pData) # add player info to the player list
 
-                # remove drops and eliminated players from player list
-                # playersToRemove = []
-                # for i in range(0,len(playerList)):
-                #     numcheck = (str(playerList[i][0]))[4:] # numerical character check for checking drops
-                #     if (str(playerList[i][0]).startswith('Drop') and len(playerList[i][0]) <= 6 and numcheck.isnumeric()) or int(playerList[i][5]) >= lossesCutoff or (int(playerList[i][2]) >= winsCutoff and winsCutoff != 0):
-                #         playersToRemove.append(i)
-                # for index in sorted(playersToRemove, reverse = True):
-                #     del playerList[index]
 
                 # check if odd number of players
                 oddRound = False
@@ -670,36 +658,32 @@ async def on_message(message: discord.Message):
                         #if it is the first round, generate a randomized list
                         random.shuffle(playerList) # shuffles the list
                         for count in range(int((len(playerList))/2)):
-                            emptyCell = first_empty_cell(dataSpreadsheet,1,1) # get first empty row in match history
+                            emptyCell = first_empty_cell(dataSpreadsheet,14) # get first empty row in match history
                             if count == 0: # if it's the first pairing, get index 0 and 1 on player list
                                 player1 = playerList[0][0]
-                                player1uid = playerList[0][3]
                                 player2 = playerList[1][0]
-                                player2uid = playerList[1][3]
-                                player1losses = playerList[0][4]
-                                player2losses = playerList[1][4]
+                                player1losses = playerList[0][2]
+                                player2losses = playerList[1][2]
                             else: # if it's not the first pairing, use the count of pairings generated to get the index numbers of players in the list
                                 player1 = playerList[(count*2)][0]
-                                player1uid = playerList[(count*2)][3]
                                 player2 = playerList[(count*2)+1][0]
-                                player2uid = playerList[(count*2)+1][3]
-                                player1losses = playerList[(count*2)][4]
-                                player2losses = playerList[(count*2)+1][4]
-                            create_matchup(player1,player1uid,player2,player2uid,emptyCell,count,updatedRoundNumber,updateRequests,dataId,matchupId,player1losses,player2losses) # create matchup sheet update request
+                                player1losses = playerList[(count*2)][2]
+                                player2losses = playerList[(count*2)+1][2]
+                            create_matchup(player1,player2,emptyCell,count,updatedRoundNumber,updateRequests,dataId,player1losses,player2losses) # create matchup sheet update request
                     else:
                         # if it's not the first round, generate a list based on standings, excluding repeated matchups and selecting a random opponent if there are two or more valid pairings
                         while len(playerList) > 0:
-                            emptyCell = first_empty_cell(dataSpreadsheet,1,1) # get first empty row in match history
+                            emptyCell = first_empty_cell(dataSpreadsheet,14) # get first empty row in match history
                             player2bye = False
 
                             #get player 1
                             player1 = playerList[0][0]
                             player1wins = playerList[0][1]
-                            player1uid = playerList[0][3]
-                            player1losses = playerList[0][4]
+                            player1losses = playerList[0][2]
+                            player1index = playerList[0][3]
 
                             # check if a bye was picked up as player 1
-                            if str(playerList[0][0]).startswith('Bye') and len(playerList[0][0]) <= 5:
+                            if str(playerList[0][0]).startswith('Bye'):
                                 player1isBye = True
                             else:
                                 player1isBye = False
@@ -707,40 +691,24 @@ async def on_message(message: discord.Message):
                             # generate list of previous matchups
                             previouslyPlayed = []
                             if roundNumber == 1:
-                                if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][10].keys(): # check to see if value exists
-                                    tempUid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][10]['formattedValue']
-                                    previouslyPlayed.append(tempUid)
+                                if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][player1index]['values'][4].keys(): # check to see if value exists
+                                    tempId = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][player1index]['values'][4]['formattedValue']
+                                    previouslyPlayed.append(tempId)
                             else:
                                 for i in range(0,(roundNumber)):
-                                    if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][(i+10)].keys(): # check to see if value exists
-                                        tempUid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][int(player1uid)]['values'][(i+10)]['formattedValue']
-                                        previouslyPlayed.append(tempUid)
+                                    if 'formattedValue' in dataSpreadsheet['sheets'][0]['data'][0]['rowData'][player1index]['values'][(i+4)].keys(): # check to see if value exists
+                                        tempId = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][player1index]['values'][(i+4)]['formattedValue']
+                                        previouslyPlayed.append(tempId)
                             del playerList[0] # remove player 1 from the player list
 
                             # generate list of valid matchups for this round
                             validMatchups = []
                             for i in range(len(playerList)):
-                                # # get the W/Res we're trying to match player 1 with
-                                # if i == 0:
-                                #     for z in range(len(playerList)):
-                                #         if playerList[z][4] not in previouslyPlayed:
-                                #             targetWins = playerList[z][1]
-                                #             targetRes = playerList[z][2] 
-                                #             # prevent bye from matching up with bye
-                                #             if player1isBye:
-                                #                 if not (str(playerList[z][0]).startswith('Bye') and len(playerList[z][0]) <= 5):
-                                #                     validMatchups.append(playerList[z])
-                                #                     break
-                                #             else:
-                                #                 validMatchups.append(playerList[z])
-                                #                 break
-                                # else:
-                                    # check if other players have the same W/Res scores
-                                if playerList[i][1] == player1wins:# and playerList[i][2] == targetRes: #Resistance based matchmaking disabled
-                                    if playerList[i][3] not in previouslyPlayed:
+                                if playerList[i][1] == player1wins:
+                                    if playerList[i][0] not in previouslyPlayed:
                                         # prevent bye from matching up with bye
                                         if player1isBye:
-                                            if not (str(playerList[z][0]).startswith('Bye') and len(playerList[z][0]) <= 5):
+                                            if not (str(playerList[i][0]).startswith('Bye')):
                                                 validMatchups.append(playerList[i])
                                         else:
                                             validMatchups.append(playerList[i])
@@ -748,11 +716,11 @@ async def on_message(message: discord.Message):
                                     break
                             if len(validMatchups) == 0 and len(playerList) > 0:
                                 for i in range(len(playerList)):
-                                    if int(playerList[i][1]) == (int(player1wins) - 1):# and playerList[i][2] == targetRes: #Resistance based matchmaking disabled
-                                        if playerList[i][3] not in previouslyPlayed:
+                                    if int(playerList[i][1]) == (int(player1wins) - 1):
+                                        if playerList[i][0] not in previouslyPlayed:
                                             # prevent bye from matching up with bye
                                             if player1isBye:
-                                                if not (str(playerList[z][0]).startswith('Bye') and len(playerList[z][0]) <= 5):
+                                                if not (str(playerList[i][0]).startswith('Bye')):
                                                     validMatchups.append(playerList[i])
                                             else:
                                                 validMatchups.append(playerList[i])
@@ -766,27 +734,21 @@ async def on_message(message: discord.Message):
                                 if not oddRound:
                                     await message.channel.send('{}**Warning!** Could not find a valid matchup for player {}! Are you running too many rounds of swiss for your player pool size? (If you think this is an error, please contact @vmnunes on discord or smogon)'.format(f'{message.author.mention}',str(player1)))
                                     player2 = 'BYE'
-                                    player2uid = '-'
                                     player2losses = '0'
-                                    # player2wins = '0' # no longer used
                                     player2bye = True
                                 else:
                                     player2 = 'BYE'
-                                    player2uid = '-'
                                     player2losses = '0'
-                                    # player2wins = '0' # no longer used
                                     player2bye = True
                             else:
                                 # pick a random player from the list of valid matchups to be player 2
                                 if player2bye == False:
                                     randomPick = random.randint(0,(len(validMatchups)-1))
                                     player2 = validMatchups[randomPick][0]
-                                    player2uid = validMatchups[randomPick][3]
-                                    # player2wins = validMatchups[randomPick][2] #not used anymore
-                                    player2losses = validMatchups[randomPick][4]
+                                    player2losses = validMatchups[randomPick][2]
                                     player2index = 0
                                     for i in range(len(playerList)):
-                                        if playerList[i][3] == player2uid:
+                                        if playerList[i][0] == player2:
                                             player2index = i
                                             break
                                     del playerList[player2index]
@@ -794,16 +756,13 @@ async def on_message(message: discord.Message):
                             #invert player 1 and player 2 if player 1 is bye
                             if player1isBye:
                                 player1temp = player1
-                                player1uidTemp = player1uid
                                 player1lossesTemp = player1losses
                                 player1 = player2
-                                player1uid = player2uid
                                 player1losses = player2losses
                                 player2 = player1temp
-                                player2uid = player1uidTemp
                                 player2losses = player1lossesTemp
-                            # if not int(player1losses) >= lossesCutoff and not int(player2losses) >= lossesCutoff and not int(player1wins) >= 8 and not int(player2wins) >=8: #old version of the check
-                            create_matchup(player1,player1uid,player2,player2uid,emptyCell,count,updatedRoundNumber,updateRequests,dataId,matchupId,player1losses,player2losses)
+
+                            create_matchup(player1,player2,emptyCell,count,updatedRoundNumber,updateRequests,dataId,player1losses,player2losses)
                             count += 1
 
                     
