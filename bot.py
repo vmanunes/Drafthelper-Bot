@@ -699,25 +699,22 @@ async def on_message(message: discord.Message):
                                     else:
                                         validMatchups.append(playerList[i])
                             else:
-                                break
+                               break
                         if len(validMatchups) == 0 and len(playerList) > 0:
                             for i in range(len(playerList)):
                                 if int(playerList[i][1]) == (int(player1wins) - 1):
                                     if playerList[i][0] not in previouslyPlayed:
                                         # prevent bye from matching up with bye
-                                        if player1isBye:
-                                            if not (str(playerList[i][0]).startswith('9000000')):
-                                                validMatchups.append(playerList[i])
-                                        else:
+                                        if not (str(playerList[i][0]).startswith('9000000')):
                                             validMatchups.append(playerList[i])
                                 else:
-                                    break
+                                   break
                                         
 
                             # get player 2        
                         if len(validMatchups) == 0:
                             # if this is not a round with an odd number of players, output an error if a valid matchup is not found, else generate a bye
-                            if not oddRound:
+                            if not oddRound and not player1isBye:
                                 await message.channel.send('{}**Warning!** Could not find a valid matchup for player {}! Are you running too many rounds of swiss for your player pool size? (If you think this is an error, please contact @vmnunes on discord or smogon)'.format(f'{message.author.mention}',str(player1)))
                                 player2 = 'BYE'
                                 player2losses = '0'
