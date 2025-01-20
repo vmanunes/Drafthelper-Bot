@@ -120,10 +120,9 @@ async def on_ready():
 async def on_message(message: discord.Message):
     rolecheck = False
     global toggleRoleMessages
-    if message.author == client.user:
+    if message.author == client.user or message.author.bot == True:
         return
     for role in message.author.roles:
-        # UPDATE LATER WITH FLEXIBLE ADMIN ROLES FOR EACH SERVER
         if role.permissions.administrator:
             rolecheck = True
         if role.name in 'Discord Staff':
@@ -448,7 +447,7 @@ async def on_message(message: discord.Message):
                             if toggleRoleMessages:
                                 await message.channel.send('User {} already in a battle pool'.format(member.display_name))
                     else:
-                        await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+                        await message.channel.send('**{}: User {} from pool {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue'],pool))
             await message.channel.send('**{}: All battle pool roles have been added.**'.format(f'{message.author.mention}'))
     
     # Reset Draft Channels
