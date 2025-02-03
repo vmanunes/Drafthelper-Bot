@@ -447,7 +447,7 @@ async def on_message(message: discord.Message):
                             if toggleRoleMessages:
                                 await message.channel.send('User {} already in a battle pool'.format(member.display_name))
                     else:
-                        await message.channel.send('**{}: User {} from pool {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue'],pool))
+                        await message.channel.send('**{}: User {} from pool {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue'],pool['formattedValue']))
             await message.channel.send('**{}: All battle pool roles have been added.**'.format(f'{message.author.mention}'))
     
     # Reset Draft Channels
