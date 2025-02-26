@@ -314,47 +314,90 @@ async def on_message(message: discord.Message):
         if len(message_args) == 0:
             await message.channel.send('This command requires 1 argument (i.e. !assignDraftPools [ID])')
         else:
-            await message.channel.send('Assigning draft pool roles. This might take some time.')
             thisGuild = client.get_guild(message.guild.id)
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Draft Pools!A:B').execute()
-            for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
-                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                    exists = False
-                    competitor_role_exists = False
-                    memberName = row['values'][1]
-                    pool = row['values'][0]
-                    newrole = 'Draft Pool {}'.format(pool['formattedValue'])
-                    new_role = None
-                    competitor_role = None
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member != None:
-                        for role in await thisGuild.fetch_roles():
-                            if role.name == newrole:
-                                exists = True
-                                new_role = role
-                            if len(message_args) == 2:
-                                if role.name == message_args[1]:
-                                    competitor_role_exists = True
-                                    competitor_role = role
-                        if exists == False:
-                            new_role = await thisGuild.create_role(name=newrole)
-                        if len(message_args) == 2:
-                            if competitor_role_exists == False:
-                                competitor_role = await thisGuild.create_role(name=message_args[1])
-                        
-                        if member.get_role(new_role.id) == None:
-                            await member.add_roles(new_role, reason="Tournament automation sorting")
-                            if toggleRoleMessages:
-                                await message.channel.send('Adding pool {} to member {}'.format(pool['formattedValue'], member.display_name))
-                        else:
-                            if toggleRoleMessages:
-                                await message.channel.send('User {} already in the pool #{}'.format(member.display_name, pool['formattedValue']))
-                        if len(message_args) == 2:
-                            if member.get_role(competitor_role.id) == None:
-                                await member.add_roles(competitor_role, reason="Tournament automation sorting")
+            notVerifiedRole = None
+            for role in await thisGuild.fetch_roles():
+                if role.name == 'Not Verified':
+                    notVerifiedRole = role
+            def checkVerification(m):
+                return (m.content == 'yes' or m.content == 'no') and m.author == message.author
+            def checkContinue (m):
+                return (m.content == 'yes' or m.content == 'no') and m.author == message.author
+            await message.channel.send('{} Preparing to assign draft pool roles. Verify player list?\n`yes` | `no`'.format(f'{message.author.mention}'))
+            try:
+                m = await client.wait_for('message', timeout=60.0, check=checkVerification)
+            except asyncio.TimeoutError:
+                await message.channel.send('No reply received, command timed out.')
+                return
+            else:
+                if m.content == 'yes':
+                    await message.channel.send('Verifying player list...')
+                    for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                        if not row:
+                            break
+                        if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                            memberName = row['values'][1]
+                            pool = row['values'][0]
+                            member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                            if member != None:
+                                if member.get_role(notVerifiedRole.id) != None:
+                                    await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
+                            else:
+                                await message.channel.send('**{}: User {} from Draft Pool {} was not found in this server**'.format(f'{message.author.mention}', memberName['effectiveValue']['stringValue'], pool['formattedValue']))
+                    await message.channel.send('{} Player list verified. Start assigning roles?\n`yes` | `no`'.format(f'{message.author.mention}'))
+                    try:
+                        m2 = await client.wait_for('message', timeout=60.0, check=checkContinue)
+                    except asyncio.TimeoutError:
+                        await message.channel.send('No reply received, command timed out.')
+                        return
                     else:
-                        await message.channel.send('**{}: User {} from Draft Pool {} was not found in this server**'.format(f'{message.author.mention}', memberName['effectiveValue']['stringValue'], pool['formattedValue']))
-            await message.channel.send('**{}: All draft pool roles have been added.**'.format(f'{message.author.mention}'))
+                        if m2.content == 'no':
+                            await message.channel.send('Understandable, have a nice day.')
+                            return
+                await message.channel.send('Assigning draft pool roles. This might take some time.')
+                for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                    if not row:
+                        break
+                    if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                        exists = False
+                        competitor_role_exists = False
+                        memberName = row['values'][1]
+                        pool = row['values'][0]
+                        newrole = 'Draft Pool {}'.format(pool['formattedValue'])
+                        new_role = None
+                        competitor_role = None
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member != None:
+                                for role in await thisGuild.fetch_roles():
+                                    if role.name == newrole:
+                                        exists = True
+                                        new_role = role
+                                    if len(message_args) == 2:
+                                        if role.name == message_args[1]:
+                                            competitor_role_exists = True
+                                            competitor_role = role
+                                if exists == False:
+                                    new_role = await thisGuild.create_role(name=newrole)
+                                if len(message_args) == 2:
+                                    if competitor_role_exists == False:
+                                        competitor_role = await thisGuild.create_role(name=message_args[1])
+                                if member.get_role(notVerifiedRole.id) == None:
+                                    if member.get_role(new_role.id) == None:
+                                        await member.add_roles(new_role, reason="Tournament automation sorting")
+                                        if toggleRoleMessages:
+                                            await message.channel.send('Adding pool {} to member {}'.format(pool['formattedValue'], member.display_name))
+                                    else:
+                                        if toggleRoleMessages:
+                                            await message.channel.send('User {} already in the pool #{}'.format(member.display_name, pool['formattedValue']))
+                                    if len(message_args) == 2:
+                                        if member.get_role(competitor_role.id) == None:
+                                            await member.add_roles(competitor_role, reason="Tournament automation sorting")
+                                else:
+                                    await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
+                        else:
+                                await message.channel.send('**{}: User {} from Draft Pool {} was not found in this server**'.format(f'{message.author.mention}', memberName['effectiveValue']['stringValue'], pool['formattedValue']))
+                await message.channel.send('**{}: All draft pool roles have been added.**'.format(f'{message.author.mention}'))
 
     # Remove Draft Pools
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------        
@@ -421,6 +464,8 @@ async def on_message(message: discord.Message):
             thisGuild = client.get_guild(message.guild.id)
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Battle Pools!A:B').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                if not row:
+                    break
                 if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                     exists = False
                     competitor_role_exists = False
@@ -490,6 +535,8 @@ async def on_message(message: discord.Message):
             thisGuild = client.get_guild(message.guild.id)
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Channel Messages!A:A').execute()
             for index,row in enumerate(spreadsheet['sheets'][0]['data'][0]['rowData']):
+                if not row:
+                    break
                 if 'formattedValue' in row['values'][0].keys():
                     channelMessage = row['values'][0]
                     channelTemp = discord.utils.get(thisGuild.channels, name='{}-draft'.format(index+1))
@@ -517,6 +564,8 @@ async def on_message(message: discord.Message):
             thisGuild = client.get_guild(message.guild.id)
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Not Verified!A:A').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                if not row:
+                    break
                 if 'formattedValue' in row['values'][0].keys():
                     memberName = row['values'][0]
                     member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
