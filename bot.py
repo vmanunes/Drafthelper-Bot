@@ -562,10 +562,10 @@ async def on_message(message: discord.Message):
         else:
             await message.channel.send('Checking for non-verified users.')
             thisGuild = client.get_guild(message.guild.id)
-            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Not Verified!A:A').execute()
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Not Verified!A1:A1337').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
-                    break
+                    continue
                 if 'formattedValue' in row['values'][0].keys():
                     memberName = row['values'][0]
                     member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
