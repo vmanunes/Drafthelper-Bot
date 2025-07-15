@@ -85,11 +85,11 @@ def first_empty_cell (spreadsheetId,column):
     return count
 
 def create_matchup (player1name,player2name,rowNumber,rowOffset,roundNumber,request,dataSheetId,player1loss,player2loss):
-    edit_cell(dataSheetId,(rowNumber+rowOffset),14,roundNumber,request,False)
-    edit_cell(dataSheetId,(rowNumber+rowOffset),15,player1name,request,False)
-    edit_cell(dataSheetId,(rowNumber+rowOffset),16,player2name,request,False)
-    edit_cell(dataSheetId,(rowNumber+rowOffset),17,player1loss,request,False)
-    edit_cell(dataSheetId,(rowNumber+rowOffset),18,player2loss,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),15,roundNumber,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),16,player1name,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),17,player2name,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),18,player1loss,request,False)
+    edit_cell(dataSheetId,(rowNumber+rowOffset),19,player2loss,request,False)
 
 # --------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
@@ -639,7 +639,7 @@ async def on_message(message: discord.Message):
             await message.channel.send('This command requires 1 argument (i.e. s!updateSwissBracket [ID])')
         else:
             # get sheets
-            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot!A1:S3005').execute()
+            dataSpreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot!A1:T3005').execute()
             dataId = dataSpreadsheet['sheets'][0]['properties']['sheetId'] # get ID of data spreadsheet in the google doc
             lossesCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][5]['values'][0]['effectiveValue']['numberValue'] # get number of losses for which players are eliminated
             winsCutoff = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][7]['values'][0]['effectiveValue']['numberValue'] # get number of wins for which players are no longer put into matchmaking
@@ -699,15 +699,15 @@ async def on_message(message: discord.Message):
 
                 count = 0
                 # check if round > 10
-                if roundNumber == 10:
-                    await message.channel.send('{} **Error!** This bot is currently limited to doing up to 10 rounds of swiss. If you need this bot to do more, please contact @vmnunes on discord or smogon.'.format(f'{message.author.mention}'))
+                if roundNumber == 11:
+                    await message.channel.send('{} **Error!** This bot is currently limited to doing up to 11 rounds of swiss. If you need this bot to do more, please contact @vmnunes on discord or smogon.'.format(f'{message.author.mention}'))
                 else:
                     if roundNumber == 0: 
                         #if it is the first round, generate a randomized list
                         random.shuffle(playerList) # shuffles the list
 
                     while len(playerList) > 0:
-                        emptyCell = first_empty_cell(dataSpreadsheet,14) # get first empty row in match history
+                        emptyCell = first_empty_cell(dataSpreadsheet,15) # get first empty row in match history
                         player2bye = False
 
                         #get player 1
