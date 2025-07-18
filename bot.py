@@ -133,6 +133,8 @@ async def on_message(message: discord.Message):
             rolecheck = True
         if role.name in 'Tournament Director':
             rolecheck = True
+        if role.name in 'VGC Tour':
+            rolecheck = True
 
     # --------------------------------------------------------------------------------------------------
     # General use commands
