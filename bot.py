@@ -748,8 +748,8 @@ async def on_message(message: discord.Message):
                                             validMatchups.append(playerList[i])
                                     else:
                                         validMatchups.append(playerList[i])
-                            else:
-                               break
+                            # else:
+                            #    break
                         if len(validMatchups) == 0 and len(playerList) > 0:
                             for i in range(len(playerList)):
                                 if int(playerList[i][1]) == (int(player1wins) - 1):
@@ -757,8 +757,8 @@ async def on_message(message: discord.Message):
                                         # prevent bye from matching up with bye
                                         if not (str(playerList[i][0]).startswith('9000000')):
                                             validMatchups.append(playerList[i])
-                                else:
-                                   break
+                                # else:
+                                #    break
                                         
 
                             # get player 2        
