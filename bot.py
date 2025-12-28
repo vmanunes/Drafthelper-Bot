@@ -318,6 +318,7 @@ async def on_message(message: discord.Message):
         else:
             thisGuild = client.get_guild(message.guild.id)
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Player List!A:A').execute()
+            await message.channel.send('Checking for missing players.')
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     break
