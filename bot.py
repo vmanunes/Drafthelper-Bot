@@ -407,7 +407,7 @@ async def on_message(message: discord.Message):
                         new_role = None
                         competitor_role = None
                         member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                        if member != None:
+                        if member != None and notVerifiedRole != None:
                                 for role in await thisGuild.fetch_roles():
                                     if role.name == newrole:
                                         exists = True
