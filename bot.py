@@ -306,6 +306,29 @@ async def on_message(message: discord.Message):
         embed.add_field(name='s!updateSwissBracket [ID]',value='Runs the swiss bracketmaker tool. Requires a sheet properly configured to run with it. Contact @vmnunes for more information.', inline=False)
         await message.channel.send(embed=embed)
 
+    # Check if Players are in server
+    # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    if message.content.startswith("s!checkPlayers"):
+        if rolecheck == False:
+            await message.channel.send('You do not have the required permissions to run this command!')
+            return
+        message_args = message.content.split(' ', 2)[1:]
+        if len(message_args) == 0:
+            await message.channel.send('This command requires 1 argument (i.e. !checkPlayers [ID])')
+        else:
+            thisGuild = client.get_guild(message.guild.id)
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Player List!A:A').execute()
+            for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                if not row:
+                    break
+                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                    memberName = row['values'][1]
+                    pool = row['values'][0]
+                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                    if member == None:
+                        await message.channel.send('**: User {} was not found in this server**'.format(memberName['effectiveValue']['stringValue']))
+            await message.channel.send('**{}: Player list check finished.**'.format(f'{message.author.mention}'))
+
     # Assign Draft Pools
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
     if message.content.startswith("s!assignDraftPools"):
