@@ -299,7 +299,7 @@ async def on_message(message: discord.Message):
         embed.add_field(name='s!assignDraftPools [ID] (Competitor role)',value='Assign pools on column A to users in column B in the "Draft Pools" tab on the given google spreadsheet. Competitor role is optional and will be added alongside draft pool role.', inline=False)
         embed.add_field(name='s!removeDraftPools',value='Remove all Draft Pool roles from users in this server.', inline=False)
         embed.add_field(name='s!setupDraftChannels [ID]',value='Sends the opening messages on each draft pool channel and creates the discussion threads. Messages should be on column A in the "Channel Messages" tab on the given google spreadsheet.', inline=False)
-        embed.add_field(name='s!resetDraftChannels',value='Looks for channels that are named X-draft-done and removes the "-done".', inline=False)     
+        embed.add_field(name='s!resetDraftChannels',value='Looks for channels that are named X-draft-done and cleans up the pinned message and thread in preparation for a new draft.', inline=False)     
         embed2 = discord.Embed(title='Battle Pools commands')
         embed2.add_field(name='s!assignBattlePools [ID]',value='Assign pools on column A to users in column B in the "Battle Pools" tab on the given google spreadsheet. Pool roles are configured to be groups of 8 pools (i.e. Battle Pools 1-8).', inline=False)
         embed2.add_field(name='s!removeBattlePools',value='Remove all Battle Pool roles from users in this server.', inline=False)
@@ -340,7 +340,7 @@ async def on_message(message: discord.Message):
                     memberName = row['values'][0]
                     member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
                     if member == None:
-                        await message.channel.send('**: User {} was not found in this server**'.format(memberName['effectiveValue']['stringValue']))
+                        await message.channel.send('**User {} was not found in this server**'.format(memberName['effectiveValue']['stringValue']))
             await message.channel.send('**{}: Player list check finished.**'.format(f'{message.author.mention}'))
 
     # Assign Draft Pools
