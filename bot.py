@@ -336,9 +336,8 @@ async def on_message(message: discord.Message):
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     break
-                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                    memberName = row['values'][1]
-                    pool = row['values'][0]
+                if 'formattedValue' in row['values'][0].keys():
+                    memberName = row['values'][0]
                     member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
                     if member == None:
                         await message.channel.send('**: User {} was not found in this server**'.format(memberName['effectiveValue']['stringValue']))
