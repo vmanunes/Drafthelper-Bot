@@ -407,7 +407,7 @@ async def on_message(message: discord.Message):
                         new_role = None
                         competitor_role = None
                         member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                        if member != None and notVerifiedRole != None:
+                        if member != None:
                                 for role in await thisGuild.fetch_roles():
                                     if role.name == newrole:
                                         exists = True
@@ -421,7 +421,21 @@ async def on_message(message: discord.Message):
                                 if len(message_args) == 2:
                                     if competitor_role_exists == False:
                                         competitor_role = await thisGuild.create_role(name=message_args[1])
-                                if member.get_role(notVerifiedRole.id) == None:
+                                if notVerifiedRole != None:
+                                    if member.get_role(notVerifiedRole.id) == None:
+                                        if member.get_role(new_role.id) == None:
+                                            await member.add_roles(new_role, reason="Tournament automation sorting")
+                                            if toggleRoleMessages:
+                                                await message.channel.send('Adding pool {} to member {}'.format(pool['formattedValue'], member.display_name))
+                                        else:
+                                            if toggleRoleMessages:
+                                                await message.channel.send('User {} already in the pool #{}'.format(member.display_name, pool['formattedValue']))
+                                        if len(message_args) == 2:
+                                            if member.get_role(competitor_role.id) == None:
+                                                await member.add_roles(competitor_role, reason="Tournament automation sorting")
+                                    else:
+                                        await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
+                                else:
                                     if member.get_role(new_role.id) == None:
                                         await member.add_roles(new_role, reason="Tournament automation sorting")
                                         if toggleRoleMessages:
@@ -432,8 +446,6 @@ async def on_message(message: discord.Message):
                                     if len(message_args) == 2:
                                         if member.get_role(competitor_role.id) == None:
                                             await member.add_roles(competitor_role, reason="Tournament automation sorting")
-                                else:
-                                    await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
                         else:
                                 await message.channel.send('**{}: User {} from Draft Pool {} was not found in this server**'.format(f'{message.author.mention}', memberName['effectiveValue']['stringValue'], pool['formattedValue']))
                 await message.channel.send('**{}: All draft pool roles have been added.**'.format(f'{message.author.mention}'))
