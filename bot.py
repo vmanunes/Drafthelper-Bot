@@ -135,6 +135,8 @@ async def on_message(message: discord.Message):
             rolecheck = True
         if role.name in 'VGC Live Tour Host':
             rolecheck = True
+        if role.name in 'Moderator':
+            rolecheck = True
 
     # --------------------------------------------------------------------------------------------------
     # General use commands
