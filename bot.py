@@ -379,7 +379,7 @@ async def on_message(message: discord.Message):
                             memberName = row['values'][1]
                             pool = row['values'][0]
                             member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                            if member != None:
+                            if member != None and notVerifiedRole != None:
                                 if member.get_role(notVerifiedRole.id) != None:
                                     await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
                             else:
