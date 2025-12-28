@@ -312,6 +312,8 @@ async def on_message(message: discord.Message):
         embed5= discord.Embed(title='Other commands')
         embed5.add_field(name='s!updateSwissBracket [ID]',value='Runs the swiss bracketmaker tool. Requires a sheet properly configured to run with it. Contact @vmnunes for more information.', inline=False)
         embed5.add_field(name='s!toggleMessages [on/off]',value='Toggles whether or not the bot will send confirmation messages for each role that is added / removed for debugging purposes (default off).', inline=False)
+        embed5.add_field(name='s!somethingBroke',value='Displays basic troubleshooting steps for common issues.', inline=False)
+        embed5.add_field(name='s!ping',value='Checks if the bot is alive.', inline=False)
         await message.channel.send(embed=embed)
         await message.channel.send(embed=embed2)
         await message.channel.send(embed=embed3)
@@ -650,6 +652,16 @@ async def on_message(message: discord.Message):
             await message.channel.send('You do not have the required permissions to run this command!')
             return
         await message.channel.send('**{}: This command has been updated, and is now "s!removeMultipleRoles".**'.format(f'{message.author.mention}'))
+
+    if message.content.startswith("s!somethingBroke"):
+        if rolecheck == False:
+            await message.channel.send('You do not have the required permissions to run this command!')
+            return
+        await message.channel.send('**{}: If you are having trouble during the execution of any command, follow these troubleshooting steps:**'.format(f'{message.author.mention}'))
+        await message.channel.send('- Check that there are no empty lines in the middle of a player list, as the bot stops on the first empty line it reaches.')
+        await message.channel.send("- Check that all player names are plain text. If a name consists entirely of numbers, you will need to add a ' before the numbers to make it read as text. If a player name becomes a hyperlink (yes, it has happened), remove the hyperlink.")
+        await message.channel.send("- Sometimes the bot gets rate limited by discord while assigning roles / sending messages. If possible, check a moderation log to see if it's still assigning roles or if it actually broke.")
+        await message.channel.send("- For troubleshooting with the swiss bracketmaker, it's usually a doc-related issue, but contact @vmnunes for help as there are too many factors involved for me to write this in a simple manner.")
 
     if message.content.startswith("s!removeMultipleRoles"):
         if rolecheck == False:
