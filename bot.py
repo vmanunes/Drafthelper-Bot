@@ -331,7 +331,7 @@ async def on_message(message: discord.Message):
             await message.channel.send('This command requires 1 argument (i.e. !checkPlayers [ID])')
         else:
             thisGuild = client.get_guild(message.guild.id)
-            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Player List!A:A').execute()
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:A').execute()
             await message.channel.send('Checking for missing players.')
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
@@ -351,10 +351,10 @@ async def on_message(message: discord.Message):
             return
         message_args = message.content.split(' ', 2)[1:]
         if len(message_args) == 0:
-            await message.channel.send('This command requires 1 argument (i.e. !assignDraftPools [ID])')
+            await message.channel.send('This command requires 1 argument (i.e. s!assignDraftPools [ID])')
         else:
             thisGuild = client.get_guild(message.guild.id)
-            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Draft Pools!A:B').execute()
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:B').execute()
             notVerifiedRole = None
             for role in await thisGuild.fetch_roles():
                 if role.name == 'Not Verified':
@@ -376,8 +376,8 @@ async def on_message(message: discord.Message):
                         if not row:
                             break
                         if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                            memberName = row['values'][1]
-                            pool = row['values'][0]
+                            memberName = row['values'][0]
+                            pool = row['values'][1]
                             member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
                             if member != None and notVerifiedRole != None:
                                 if member.get_role(notVerifiedRole.id) != None:
@@ -401,8 +401,8 @@ async def on_message(message: discord.Message):
                     if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                         exists = False
                         competitor_role_exists = False
-                        memberName = row['values'][1]
-                        pool = row['values'][0]
+                        memberName = row['values'][0]
+                        pool = row['values'][1]
                         newrole = 'Draft Pool {}'.format(pool['formattedValue'])
                         new_role = None
                         competitor_role = None
@@ -513,15 +513,15 @@ async def on_message(message: discord.Message):
         else:
             await message.channel.send('Assigning battle pool roles. This might take some time.')
             thisGuild = client.get_guild(message.guild.id)
-            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Battle Pools!A:B').execute()
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:B').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     break
                 if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                     exists = False
                     competitor_role_exists = False
-                    memberName = row['values'][1]
-                    pool = row['values'][0]
+                    memberName = row['values'][0]
+                    pool = row['values'][1]
                     poolRangeLower = str((((math.ceil(int(pool['formattedValue'])/8))-1)*8)+1)
                     poolRangeHigher = str((((math.ceil(int(pool['formattedValue'])/8))-1)*8)+8)
                     newrole = 'Battle Pools {}-{}'.format(poolRangeLower, poolRangeHigher)
@@ -584,13 +584,14 @@ async def on_message(message: discord.Message):
         else:
             await message.channel.send('Sending messages to all draft channels and creating the discussion threads. This might take some time.')
             thisGuild = client.get_guild(message.guild.id)
-            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Channel Messages!A:A').execute()
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:B').execute()
             for index,row in enumerate(spreadsheet['sheets'][0]['data'][0]['rowData']):
                 if not row:
                     break
-                if 'formattedValue' in row['values'][0].keys():
+                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                     channelMessage = row['values'][0]
-                    channelTemp = discord.utils.get(thisGuild.channels, name='{}-draft'.format(index+1))
+                    channelNumber = row['values'][1]
+                    channelTemp = discord.utils.get(thisGuild.channels, name='{}-draft'.format(channelNumber['effectiveValue']['stringValue']))
                     currentChannel = client.get_channel(channelTemp.id)
                     sentMessage = await currentChannel.send(channelMessage['formattedValue'])
                     await sentMessage.pin()
@@ -613,7 +614,7 @@ async def on_message(message: discord.Message):
         else:
             await message.channel.send('Checking for non-verified users.')
             thisGuild = client.get_guild(message.guild.id)
-            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Not Verified!A1:A1337').execute()
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A1:A1337').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     continue
@@ -633,23 +634,105 @@ async def on_message(message: discord.Message):
                             await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
             await message.channel.send('**{}: Verification complete.**'.format(f'{message.author.mention}'))
     
+    # Role management
+    # -----------------------------------------------------------------------------------------------------------------------------------------------------------  
+
+    if message.content.startswith("s!addSingleRole"):
+        if rolecheck == False:
+            await message.channel.send('You do not have the required permissions to run this command!')
+            return
+        message_args = message.content.split(' ', 2)[1:]
+        if len(message_args) != 2:
+            await message.channel.send('This command requires 2 arguments (i.e. s!addSingleRole [ID] [role name])')
+        else:
+            await message.channel.send('Assigning roles. This might take some time.')
+            thisGuild = client.get_guild(message.guild.id)
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:A').execute()
+            for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                if not row:
+                    break
+                if 'formattedValue' in row['values'][0].keys():
+                    exists = False
+                    competitor_role_exists = False
+                    memberName = row['values'][0]
+                    newrole = message_args[1]
+                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                    if member != None:
+                        for role in await thisGuild.fetch_roles():
+                            if role.name == newrole:
+                                exists = True
+                                new_role = role
+                        if exists == False:
+                            await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',message_args[0]))                     
+                        if member.get_role(new_role.id) == None:
+                            await member.add_roles(new_role, reason="Tournament automation sorting")
+                            if toggleRoleMessages:
+                                await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                        else:
+                            if toggleRoleMessages:
+                                await message.channel.send('User {} already has this role.'.format(member.display_name))
+                    else:
+                        await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+            await message.channel.send('**{}: All roles have been added.**'.format(f'{message.author.mention}'))
+
+    if message.content.startswith("s!addMultipleRoles"):
+        if rolecheck == False:
+            await message.channel.send('You do not have the required permissions to run this command!')
+            return
+        message_args = message.content.split(' ')[1:]
+        if len(message_args) == 0:
+            await message.channel.send('This command requires 1 argument (i.e. s!addMultipleRoles [ID])')
+        else:
+            await message.channel.send('Assigning roles. This might take some time.')
+            thisGuild = client.get_guild(message.guild.id)
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:B').execute()
+            for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                if not row:
+                    break
+                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                    exists = False
+                    competitor_role_exists = False
+                    memberName = row['values'][0]
+                    newrole = row['values'][1]
+                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                    if member != None:
+                        for role in await thisGuild.fetch_roles():
+                            if role.name == newrole:
+                                exists = True
+                                new_role = role
+                        if exists == False:
+                            await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',message_args[0]))                     
+                        if member.get_role(new_role.id) == None:
+                            await member.add_roles(new_role, reason="Tournament automation sorting")
+                            if toggleRoleMessages:
+                                await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                        else:
+                            if toggleRoleMessages:
+                                await message.channel.send('User {} already has this role.'.format(member.display_name))
+                    else:
+                        await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+            await message.channel.send('**{}: All roles have been added.**'.format(f'{message.author.mention}'))
     
     if message.content.startswith("s!removeSingleRole"):
         if rolecheck == False:
             await message.channel.send('You do not have the required permissions to run this command!')
             return
-        message_args = message.content.split(' ', 1)[1:]
+        message_args = message.content.split(' ', 2)[1:]
         if len(message_args) == 0:
-            await message.channel.send('This command requires 1 argument (i.e. s!removeSingleRole [role name])')
+            await message.channel.send('This command requires 2 arguments (i.e. s!removeSingleRole [ID] [role name])')
         else:
             await message.channel.send('Removing roles. This might take some time.')
             thisGuild = client.get_guild(message.guild.id)
-            for role in thisGuild.roles:
-                if message_args[0] in role.name:
-                    for member in role.members:
-                        await member.remove_roles(role)
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:A').execute()
+            for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
+                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                    memberName = row['values'][0]
+                    roleName = message_args[1]
+                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                    if member != None:                       
+                        await member.remove_roles(roleName)
                         if toggleRoleMessages:
-                            await message.channel.send('Removing {} from member {}'.format(role.name, member.display_name))
+                            await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
             await message.channel.send('**{}: All roles have been removed.**'.format(f'{message.author.mention}'))
 
     if message.content.startswith("s!removeCompetitorRoles"):
@@ -684,7 +767,7 @@ async def on_message(message: discord.Message):
         else:
             await message.channel.send('Removing specific roles. This might take some time.')
             thisGuild = client.get_guild(message.guild.id)
-            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Role Removal!A:B').execute()
+            spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:B').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                     memberName = row['values'][0]
