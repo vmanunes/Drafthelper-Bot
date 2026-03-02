@@ -695,7 +695,8 @@ async def on_message(message: discord.Message):
                 if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                     exists = False
                     memberName = row['values'][0]
-                    newrole = row['values'][1]
+                    docrole = row['values'][1]
+                    newrole = docrole['formattedValue']
                     new_role = None
                     member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
                     if member != None:
