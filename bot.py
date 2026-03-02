@@ -658,6 +658,7 @@ async def on_message(message: discord.Message):
                     competitor_role_exists = False
                     memberName = row['values'][0]
                     newrole = message_args[1]
+                    new_role = None
                     member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
                     if member != None:
                         for role in await thisGuild.fetch_roles():
@@ -693,9 +694,9 @@ async def on_message(message: discord.Message):
                     break
                 if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                     exists = False
-                    competitor_role_exists = False
                     memberName = row['values'][0]
                     newrole = row['values'][1]
+                    new_role = None
                     member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
                     if member != None:
                         for role in await thisGuild.fetch_roles():
@@ -703,7 +704,7 @@ async def on_message(message: discord.Message):
                                 exists = True
                                 new_role = role
                         if exists == False:
-                            await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',message_args[0]))                     
+                            await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',newrole['effectiveValue']['stringValue']))                     
                         if member.get_role(new_role.id) == None:
                             await member.add_roles(new_role, reason="Tournament automation sorting")
                             if toggleRoleMessages:
