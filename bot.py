@@ -338,11 +338,14 @@ async def on_message(message: discord.Message):
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     break
-                if 'formattedValue' in row['values'][0].keys():
-                    memberName = row['values'][0]
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member == None:
-                        await message.channel.send('**User {} was not found in this server**'.format(memberName['effectiveValue']['stringValue']))
+                try:
+                    if 'formattedValue' in row['values'][0].keys():
+                        memberName = row['values'][0]
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member == None:
+                            await message.channel.send('**User {} was not found in this server**'.format(memberName['effectiveValue']['stringValue']))
+                except:
+                    break
             await message.channel.send('**{}: Player list check finished.**'.format(f'{message.author.mention}'))
 
     # Assign Draft Pools
@@ -377,15 +380,18 @@ async def on_message(message: discord.Message):
                     for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                         if not row:
                             break
-                        if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                            memberName = row['values'][0]
-                            pool = row['values'][1]
-                            member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                            if member != None and notVerifiedRole != None:
-                                if member.get_role(notVerifiedRole.id) != None:
-                                    await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
-                            else:
-                                await message.channel.send('**{}: User {} from Draft Pool {} was not found in this server**'.format(f'{message.author.mention}', memberName['effectiveValue']['stringValue'], pool['formattedValue']))
+                        try:                             
+                            if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                                memberName = row['values'][0]
+                                pool = row['values'][1]
+                                member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                                if member != None and notVerifiedRole != None:
+                                    if member.get_role(notVerifiedRole.id) != None:
+                                        await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
+                                else:
+                                    await message.channel.send('**{}: User {} from Draft Pool {} was not found in this server**'.format(f'{message.author.mention}', memberName['effectiveValue']['stringValue'], pool['formattedValue']))
+                        except:
+                            break
                     await message.channel.send('{} Player list verified. Start assigning roles?\n`yes` | `no`'.format(f'{message.author.mention}'))
                     try:
                         m2 = await client.wait_for('message', timeout=60.0, check=checkContinue)
@@ -400,31 +406,45 @@ async def on_message(message: discord.Message):
                 for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                     if not row:
                         break
-                    if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                        exists = False
-                        competitor_role_exists = False
-                        memberName = row['values'][0]
-                        pool = row['values'][1]
-                        newrole = 'Draft Pool {}'.format(pool['formattedValue'])
-                        new_role = None
-                        competitor_role = None
-                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                        if member != None:
-                                for role in await thisGuild.fetch_roles():
-                                    if role.name == newrole:
-                                        exists = True
-                                        new_role = role
+                    try:
+                        if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                            exists = False
+                            competitor_role_exists = False
+                            memberName = row['values'][0]
+                            pool = row['values'][1]
+                            newrole = 'Draft Pool {}'.format(pool['formattedValue'])
+                            new_role = None
+                            competitor_role = None
+                            member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                            if member != None:
+                                    for role in await thisGuild.fetch_roles():
+                                        if role.name == newrole:
+                                            exists = True
+                                            new_role = role
+                                        if len(message_args) == 2:
+                                            if role.name == message_args[1]:
+                                                competitor_role_exists = True
+                                                competitor_role = role
+                                    if exists == False:
+                                        new_role = await thisGuild.create_role(name=newrole)
                                     if len(message_args) == 2:
-                                        if role.name == message_args[1]:
-                                            competitor_role_exists = True
-                                            competitor_role = role
-                                if exists == False:
-                                    new_role = await thisGuild.create_role(name=newrole)
-                                if len(message_args) == 2:
-                                    if competitor_role_exists == False:
-                                        competitor_role = await thisGuild.create_role(name=message_args[1])
-                                if notVerifiedRole != None:
-                                    if member.get_role(notVerifiedRole.id) == None:
+                                        if competitor_role_exists == False:
+                                            competitor_role = await thisGuild.create_role(name=message_args[1])
+                                    if notVerifiedRole != None:
+                                        if member.get_role(notVerifiedRole.id) == None:
+                                            if member.get_role(new_role.id) == None:
+                                                await member.add_roles(new_role, reason="Tournament automation sorting")
+                                                if toggleRoleMessages:
+                                                    await message.channel.send('Adding pool {} to member {}'.format(pool['formattedValue'], member.display_name))
+                                            else:
+                                                if toggleRoleMessages:
+                                                    await message.channel.send('User {} already in the pool #{}'.format(member.display_name, pool['formattedValue']))
+                                            if len(message_args) == 2:
+                                                if member.get_role(competitor_role.id) == None:
+                                                    await member.add_roles(competitor_role, reason="Tournament automation sorting")
+                                        else:
+                                            await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
+                                    else:
                                         if member.get_role(new_role.id) == None:
                                             await member.add_roles(new_role, reason="Tournament automation sorting")
                                             if toggleRoleMessages:
@@ -435,21 +455,10 @@ async def on_message(message: discord.Message):
                                         if len(message_args) == 2:
                                             if member.get_role(competitor_role.id) == None:
                                                 await member.add_roles(competitor_role, reason="Tournament automation sorting")
-                                    else:
-                                        await message.channel.send('{}: User {} is not verified!'.format(f'{message.author.mention}', member.mention))
-                                else:
-                                    if member.get_role(new_role.id) == None:
-                                        await member.add_roles(new_role, reason="Tournament automation sorting")
-                                        if toggleRoleMessages:
-                                            await message.channel.send('Adding pool {} to member {}'.format(pool['formattedValue'], member.display_name))
-                                    else:
-                                        if toggleRoleMessages:
-                                            await message.channel.send('User {} already in the pool #{}'.format(member.display_name, pool['formattedValue']))
-                                    if len(message_args) == 2:
-                                        if member.get_role(competitor_role.id) == None:
-                                            await member.add_roles(competitor_role, reason="Tournament automation sorting")
-                        else:
+                            else:
                                 await message.channel.send('**{}: User {} from Draft Pool {} was not found in this server**'.format(f'{message.author.mention}', memberName['effectiveValue']['stringValue'], pool['formattedValue']))
+                    except:
+                        break
                 await message.channel.send('**{}: All draft pool roles have been added.**'.format(f'{message.author.mention}'))
 
     # Remove Draft Pools
@@ -519,33 +528,36 @@ async def on_message(message: discord.Message):
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     break
-                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                    exists = False
-                    competitor_role_exists = False
-                    memberName = row['values'][0]
-                    pool = row['values'][1]
-                    poolRangeLower = str((((math.ceil(int(pool['formattedValue'])/8))-1)*8)+1)
-                    poolRangeHigher = str((((math.ceil(int(pool['formattedValue'])/8))-1)*8)+8)
-                    newrole = 'Battle Pools {}-{}'.format(poolRangeLower, poolRangeHigher)
-                    new_role = None
-                    competitor_role = None
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member != None:
-                        for role in await thisGuild.fetch_roles():
-                            if role.name == newrole:
-                                exists = True
-                                new_role = role
-                        if exists == False:
-                            new_role = await thisGuild.create_role(name=newrole)                        
-                        if member.get_role(new_role.id) == None:
-                            await member.add_roles(new_role, reason="Tournament automation sorting")
-                            if toggleRoleMessages:
-                                await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                try:
+                    if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                        exists = False
+                        competitor_role_exists = False
+                        memberName = row['values'][0]
+                        pool = row['values'][1]
+                        poolRangeLower = str((((math.ceil(int(pool['formattedValue'])/8))-1)*8)+1)
+                        poolRangeHigher = str((((math.ceil(int(pool['formattedValue'])/8))-1)*8)+8)
+                        newrole = 'Battle Pools {}-{}'.format(poolRangeLower, poolRangeHigher)
+                        new_role = None
+                        competitor_role = None
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member != None:
+                            for role in await thisGuild.fetch_roles():
+                                if role.name == newrole:
+                                    exists = True
+                                    new_role = role
+                            if exists == False:
+                                new_role = await thisGuild.create_role(name=newrole)                        
+                            if member.get_role(new_role.id) == None:
+                                await member.add_roles(new_role, reason="Tournament automation sorting")
+                                if toggleRoleMessages:
+                                    await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                            else:
+                                if toggleRoleMessages:
+                                    await message.channel.send('User {} already in a battle pool'.format(member.display_name))
                         else:
-                            if toggleRoleMessages:
-                                await message.channel.send('User {} already in a battle pool'.format(member.display_name))
-                    else:
-                        await message.channel.send('**{}: User {} from pool {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue'],pool['formattedValue']))
+                            await message.channel.send('**{}: User {} from pool {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue'],pool['formattedValue']))
+                except:
+                    break
             await message.channel.send('**{}: All battle pool roles have been added.**'.format(f'{message.author.mention}'))
     
     # Reset Draft Channels
@@ -590,18 +602,21 @@ async def on_message(message: discord.Message):
             for index,row in enumerate(spreadsheet['sheets'][0]['data'][0]['rowData']):
                 if not row:
                     break
-                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                    channelMessage = row['values'][0]
-                    channelNumber = row['values'][1]
-                    channelTemp = discord.utils.get(thisGuild.channels, name='{}-draft'.format(channelNumber['effectiveValue']['stringValue']))
-                    currentChannel = client.get_channel(channelTemp.id)
-                    sentMessage = await currentChannel.send(channelMessage['formattedValue'])
-                    await sentMessage.pin()
-                    currentThread = await currentChannel.create_thread(
-                        name='Pool Discussion',
-                        type=ChannelType.public_thread
-                    )
-                    await currentThread.send('Please use this thread for general discussions related to the draft pool.')
+                try:
+                    if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                        channelMessage = row['values'][0]
+                        channelNumber = row['values'][1]
+                        channelTemp = discord.utils.get(thisGuild.channels, name='{}-draft'.format(str(channelNumber['formattedValue'])))
+                        currentChannel = client.get_channel(channelTemp.id)
+                        sentMessage = await currentChannel.send(channelMessage['formattedValue'])
+                        await sentMessage.pin()
+                        currentThread = await currentChannel.create_thread(
+                            name='Pool Discussion',
+                            type=ChannelType.public_thread
+                        )
+                        await currentThread.send('Please use this thread for general discussions related to the draft pool.')
+                except:
+                    break
             await message.channel.send('**{}: All draft pool channels have been setup.**'.format(f'{message.author.mention}'))
 
     # Check for Verified users
@@ -620,20 +635,23 @@ async def on_message(message: discord.Message):
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     continue
-                if 'formattedValue' in row['values'][0].keys():
-                    memberName = row['values'][0]
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member != None:
-                        # debug check
-                        # await message.channel.send('Checking user {}'.format(member.display_name))
-                        # debug check end
-                        for role in member.roles:
-                            if role.name in 'Not Verified':
-                                await message.channel.send('***{}***'.format(member.display_name))
-                                # await message.channel.send('{}'.format(member.display_name))
-                    else:
-                        if toggleRoleMessages:
-                            await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+                try:
+                    if 'formattedValue' in row['values'][0].keys():
+                        memberName = row['values'][0]
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member != None:
+                            # debug check
+                            # await message.channel.send('Checking user {}'.format(member.display_name))
+                            # debug check end
+                            for role in member.roles:
+                                if role.name in 'Not Verified':
+                                    await message.channel.send('***{}***'.format(member.display_name))
+                                    # await message.channel.send('{}'.format(member.display_name))
+                        else:
+                            if toggleRoleMessages:
+                                await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+                except:
+                    break
             await message.channel.send('**{}: Verification complete.**'.format(f'{message.author.mention}'))
     
     # Role management
@@ -653,29 +671,32 @@ async def on_message(message: discord.Message):
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     break
-                if 'formattedValue' in row['values'][0].keys():
-                    exists = False
-                    competitor_role_exists = False
-                    memberName = row['values'][0]
-                    newrole = message_args[1]
-                    new_role = None
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member != None:
-                        for role in await thisGuild.fetch_roles():
-                            if role.name == newrole:
-                                exists = True
-                                new_role = role
-                        if exists == False:
-                            await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',message_args[0]))                     
-                        if member.get_role(new_role.id) == None:
-                            await member.add_roles(new_role, reason="Tournament automation sorting")
-                            if toggleRoleMessages:
-                                await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                try:
+                    if 'formattedValue' in row['values'][0].keys():
+                        exists = False
+                        competitor_role_exists = False
+                        memberName = row['values'][0]
+                        newrole = message_args[1]
+                        new_role = None
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member != None:
+                            for role in await thisGuild.fetch_roles():
+                                if role.name == newrole:
+                                    exists = True
+                                    new_role = role
+                            if exists == False:
+                                await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',message_args[0]))                     
+                            if member.get_role(new_role.id) == None:
+                                await member.add_roles(new_role, reason="Tournament automation sorting")
+                                if toggleRoleMessages:
+                                    await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                            else:
+                                if toggleRoleMessages:
+                                    await message.channel.send('User {} already has this role.'.format(member.display_name))
                         else:
-                            if toggleRoleMessages:
-                                await message.channel.send('User {} already has this role.'.format(member.display_name))
-                    else:
-                        await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+                            await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+                except:
+                    break
             await message.channel.send('**{}: All roles have been added.**'.format(f'{message.author.mention}'))
 
     if message.content.startswith("s!addMultipleRoles"):
@@ -692,29 +713,32 @@ async def on_message(message: discord.Message):
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
                 if not row:
                     break
-                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                    exists = False
-                    memberName = row['values'][0]
-                    docrole = row['values'][1]
-                    newrole = docrole['formattedValue']
-                    new_role = None
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member != None:
-                        for role in await thisGuild.fetch_roles():
-                            if role.name == newrole:
-                                exists = True
-                                new_role = role
-                        if exists == False:
-                            await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',newrole['effectiveValue']['stringValue']))                     
-                        if member.get_role(new_role.id) == None:
-                            await member.add_roles(new_role, reason="Tournament automation sorting")
-                            if toggleRoleMessages:
-                                await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                try:
+                    if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                        exists = False
+                        memberName = row['values'][0]
+                        docrole = row['values'][1]
+                        newrole = docrole['formattedValue']
+                        new_role = None
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member != None:
+                            for role in await thisGuild.fetch_roles():
+                                if role.name == newrole:
+                                    exists = True
+                                    new_role = role
+                            if exists == False:
+                                await message.channel.send('**{}: The role {} does not exist in this server!**'.format(f'{message.author.mention}',newrole['effectiveValue']['stringValue']))                     
+                            if member.get_role(new_role.id) == None:
+                                await member.add_roles(new_role, reason="Tournament automation sorting")
+                                if toggleRoleMessages:
+                                    await message.channel.send('Adding {} to member {}'.format(newrole, member.display_name))
+                            else:
+                                if toggleRoleMessages:
+                                    await message.channel.send('User {} already has this role.'.format(member.display_name))
                         else:
-                            if toggleRoleMessages:
-                                await message.channel.send('User {} already has this role.'.format(member.display_name))
-                    else:
-                        await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+                            await message.channel.send('**{}: User {} was not found in this server**'.format(f'{message.author.mention}',memberName['effectiveValue']['stringValue']))
+                except:
+                    break
             await message.channel.send('**{}: All roles have been added.**'.format(f'{message.author.mention}'))
     
     if message.content.startswith("s!removeSingleRole"):
@@ -729,14 +753,17 @@ async def on_message(message: discord.Message):
             thisGuild = client.get_guild(message.guild.id)
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:A').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
-                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                    memberName = row['values'][0]
-                    roleName = message_args[1]
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member != None:                       
-                        await member.remove_roles(roleName)
-                        if toggleRoleMessages:
-                            await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
+                try:
+                    if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                        memberName = row['values'][0]
+                        roleName = message_args[1]
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member != None:                       
+                            await member.remove_roles(roleName)
+                            if toggleRoleMessages:
+                                await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
+                except:
+                    break
             await message.channel.send('**{}: All roles have been removed.**'.format(f'{message.author.mention}'))
 
     if message.content.startswith("s!removeCompetitorRoles"):
@@ -773,14 +800,17 @@ async def on_message(message: discord.Message):
             thisGuild = client.get_guild(message.guild.id)
             spreadsheet = spreadsheet_service.spreadsheets().get(spreadsheetId=message_args[0],includeGridData=True, ranges='Bot Management!A:B').execute()
             for row in spreadsheet['sheets'][0]['data'][0]['rowData']:
-                if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
-                    memberName = row['values'][0]
-                    roleName = row['values'][1]
-                    member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                    if member != None:                       
-                        await member.remove_roles(roleName)
-                        if toggleRoleMessages:
-                            await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
+                try:
+                    if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
+                        memberName = row['values'][0]
+                        roleName = row['values'][1]
+                        member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
+                        if member != None:                       
+                            await member.remove_roles(roleName)
+                            if toggleRoleMessages:
+                                await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
+                except:
+                    break
             await message.channel.send('**{}: Specified roles have been removed.**'.format(f'{message.author.mention}'))
 
 # -------------------------------------------------------------------------------------------------------------------------------
@@ -838,16 +868,19 @@ async def on_message(message: discord.Message):
                 # create player list based on standings
                 playerList = [] 
                 for index, row in enumerate(dataSpreadsheet['sheets'][0]['data'][0]['rowData']): 
-                    if 'formattedValue' in row['values'][1].keys():
-                        if index != 0:
-                            sLid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][1]['formattedValue'] # get player id
-                            sLwins = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][2]['formattedValue'] # get player wins
-                            sLlosses = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][3]['formattedValue'] # get player losses
-                            sLindex = index
-                            if not (int(sLlosses) >= lossesCutoff) and not (int(sLwins) >= winsCutoff and winsCutoff != 0):
-                                # subList = [sLname, sLwins, sLres, sLuid, sLlosses] # create sublist from player data
-                                pData = PlayerData(sLid,sLwins,sLlosses,sLindex)
-                                playerList.append(pData) # add player info to the player list
+                    try:
+                        if 'formattedValue' in row['values'][1].keys():
+                            if index != 0:
+                                sLid = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][1]['formattedValue'] # get player id
+                                sLwins = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][2]['formattedValue'] # get player wins
+                                sLlosses = dataSpreadsheet['sheets'][0]['data'][0]['rowData'][index]['values'][3]['formattedValue'] # get player losses
+                                sLindex = index
+                                if not (int(sLlosses) >= lossesCutoff) and not (int(sLwins) >= winsCutoff and winsCutoff != 0):
+                                    # subList = [sLname, sLwins, sLres, sLuid, sLlosses] # create sublist from player data
+                                    pData = PlayerData(sLid,sLwins,sLlosses,sLindex)
+                                    playerList.append(pData) # add player info to the player list
+                    except:
+                        break
 
 
                 # check if odd number of players
