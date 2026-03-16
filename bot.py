@@ -757,9 +757,15 @@ async def on_message(message: discord.Message):
                     if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                         memberName = row['values'][0]
                         roleName = message_args[1]
+                        roleToRemove = None
+                        for role in await thisGuild.fetch_roles():
+                            if role.name == roleName:
+                                roleToRemove = role
+                        if roleToRemove == None:
+                            await message.channel.send('Role {} not found in server!'.format(roleName))
                         member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                        if member != None:                       
-                            await member.remove_roles(roleName)
+                        if member != None and roleToRemove != None:                                     
+                            await member.remove_roles(roleToRemove)
                             if toggleRoleMessages:
                                 await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
                 except:
@@ -804,9 +810,13 @@ async def on_message(message: discord.Message):
                     if 'formattedValue' in row['values'][0].keys() or 'formattedValue' in row['values'][1].keys():
                         memberName = row['values'][0]
                         roleName = row['values'][1]
+                        roleToRemove = None
                         member = thisGuild.get_member_named(memberName['effectiveValue']['stringValue'])
-                        if member != None:                       
-                            await member.remove_roles(roleName)
+                        if member != None:
+                            for role in await thisGuild.fetch_roles():
+                                    if role.name == str(roleName['formattedValue']):
+                                        roleToRemove = role              
+                            await member.remove_roles(roleToRemove)
                             if toggleRoleMessages:
                                 await message.channel.send('Removing {} from member {}'.format(roleName, member.display_name))
                 except:
